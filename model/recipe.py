@@ -1,12 +1,12 @@
 class Recipe:
-    def __init__(self, name, ingredients, link, description, calories, time_cooking, categories):
-        self.name = name
-        self.ingredients = ingredients
-        self.link = link
-        self.description = description
-        self.calories = calories
-        self.time_cooking = time_cooking
-        self.categories = categories
+    def __init__(self):
+        self.name = None
+        self.ingredients = None
+        self.link = None
+        self.description = None
+        self.calories = None
+        self.time_cooking = None
+        self.categories = None
 
     def __str__(self):
         return '({}, {}, {}, {}, {}, {}, {})'.format(self.name, self.ingredients, self.link, self.description,
