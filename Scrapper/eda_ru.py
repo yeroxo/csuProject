@@ -34,46 +34,58 @@ class Crawler:
 
 class Parser:
 
+    def get_steps(self, item):
+        steps = item.find_all('span', class_='instruction__description')
+        arr_steps = []
+        for step in steps:
+            arr_steps.append(step.get_text(strip=True))
+        return ' '.join(arr_steps)
+
+    def get_ingredients(self, item):
+        ingrid = item.find('div', class_='ingredients-list__content').find_all('span')
+        str_ingrid = []
+        for i in ingrid:
+            if i.find('span') is None:
+                pass
+            else:
+                str_ingrid.append(i.find('span').get_text(strip=True))
+        return str_ingrid
+
+    def get_categories(self, item):
+        arr_categ = []
+        categ = item.find(class_='breadcrumbs').find_all('a')
+        for c in categ:
+            arr_categ.append(c.get_text())
+        return arr_categ
+
     def get_content(self, html, url):
         soup = BeautifulSoup(html, 'html.parser')
         items = soup.find_all(class_='recipe')
-
-        recipe = []
+        recipe = {}
         for item in items:
-            steps = item.find_all('span', class_='instruction__description')
-            arr_steps = []
-            for step in steps:
-                arr_steps.append(step.get_text(strip=True))
-            str_steps = ' '.join(arr_steps)
-            ingrid = item.find('div', class_='ingredients-list__content').find_all('span')
-            str_ingrid = []
-            for i in ingrid:
-                if i.find('span') is None:
-                    pass
-                else:
-                    str_ingrid.append(i.find('span').get_text(strip=True))
-            arr_categ = []
-            categ = item.find(class_='breadcrumbs').find_all('a')
-            for c in categ:
-                arr_categ.append(c.get_text())
-            recipe.append({
-                'name': item.find('h1').get_text(strip=True),
+            recipe = {
+                'name': item.find('h1').get_text(strip=True).replace('\xa0', ' '),
                 'image': item.find('img').get('src'),
-                'ingredients': str_ingrid,
+                'ingredients': self.get_ingredients(item),
                 'link': url,
-                'description': str_steps,
+                'description': self.get_steps(item),
                 'calories': item.find('p', class_='nutrition__weight').get_text(),
                 'time_cooking': item.find('span', class_='prep-time').get_text(strip=True),
-                'categories': arr_categ
-            })
+                'categories': self.get_categories(item)
+            }
         print(recipe)
         return recipe
 
     def parse(self, list):
         for l in list:
-            html = Crawler.get_html(Crawler(),l)
+            html = Crawler.get_html(Crawler(), l)
             if html.status_code == 200:
-                self.get_content(html.text,l)
+                self.get_content(html.text, l)
             else:
                 print("error")
 
+
+list = ['https://eda.ru/recepty/vypechka-deserty/oladi-iz-kabachkov-klassicheskie-28540',
+        'https://eda.ru/recepty/vypechka-deserty/tvorozhnij-desert-bez-vipechki-33617']
+p = Parser()
+p.parse(list)
