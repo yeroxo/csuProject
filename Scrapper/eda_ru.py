@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 
 
-class Crawler:
+class CrawlerEdaRu:
     def __init__(self):
         self.links = []
         self.url = 'https://eda.ru/recepty'
@@ -32,7 +32,7 @@ class Crawler:
         return self.links
 
 
-class Parser:
+class ParserEdaRu:
 
     def get_steps(self, item):
         steps = item.find_all('span', class_='instruction__description')
@@ -60,25 +60,23 @@ class Parser:
 
     def get_content(self, html, url):
         soup = BeautifulSoup(html, 'html.parser')
-        items = soup.find_all(class_='recipe')
-        recipe = {}
-        for item in items:
-            recipe = {
-                'name': item.find('h1').get_text(strip=True).replace('\xa0', ' '),
-                'image': item.find('img').get('src'),
-                'ingredients': self.get_ingredients(item),
-                'link': url,
-                'description': self.get_steps(item),
-                'calories': item.find('p', class_='nutrition__weight').get_text(),
-                'time_cooking': item.find('span', class_='prep-time').get_text(strip=True),
-                'categories': self.get_categories(item)
-            }
+        item = soup.find(class_='recipe')
+        recipe = {
+            'name': item.find('h1').get_text(strip=True).replace('\xa0', ' '),
+            'image': item.find('img').get('src'),
+            'ingredients': self.get_ingredients(item),
+            'link': url,
+            'description': self.get_steps(item),
+            'calories': item.find('p', class_='nutrition__weight').get_text(),
+            'time_cooking': item.find('span', class_='prep-time').get_text(strip=True),
+            'categories': self.get_categories(item)
+        }
         print(recipe)
         return recipe
 
     def parse(self, list):
         for l in list:
-            html = Crawler.get_html(Crawler(), l)
+            html = CrawlerEdaRu.get_html(CrawlerEdaRu(), l)
             if html.status_code == 200:
                 self.get_content(html.text, l)
             else:
@@ -87,5 +85,5 @@ class Parser:
 
 list = ['https://eda.ru/recepty/vypechka-deserty/oladi-iz-kabachkov-klassicheskie-28540',
         'https://eda.ru/recepty/vypechka-deserty/tvorozhnij-desert-bez-vipechki-33617']
-p = Parser()
+p = ParserEdaRu()
 p.parse(list)
