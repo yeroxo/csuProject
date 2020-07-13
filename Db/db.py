@@ -1,11 +1,13 @@
 import sqlite3
 from sqlite3 import Error
+import model.recipe
 
 
 class SqliteRecipes:
     def __init__(self, path):
         self.connection = self.create_connection(path)
         self.cursor = self.connection.cursor()
+        self.create_tables()
 
     def create_connection(self, path):
         connection = None
@@ -42,48 +44,71 @@ class SqliteRecipes:
         except Error as e:
             print(f"The error '{e}' occurred")
 
+    def create_tables(self):
+        self.execute_query(self.create_users_table)
+        self.execute_query(self.create_products_table)
+        self.execute_query(self.create_recipes_table)
+        self.execute_query(self.create_ingredients_table)
+        self.execute_query(self.create_favourites_table)
+        self.execute_query(self.create_categories_table)
+        self.execute_query(self.create_categ_of_rec_table)
+
     def add_product(self, product):
-        self.execute_query_with_value(self.insert_new_product, product)
+        args = (product,)
+        self.execute_query_with_value(self.insert_new_product, args)
         self.connection.commit()
 
     def add_category(self, category):
-        self.execute_query_with_value(self.insert_new_category, category)
+        args = (category,)
+        self.execute_query_with_value(self.insert_new_category, args)
         self.connection.commit()
 
     def add_user(self, user):
+        args = (user,)
         cursor = self.connection.cursor()
         cursor.execute(self.find_exist_user, user)
         row = cursor.fetchone()
         if row is None:
-            self.execute_query_with_value(self.insert_new_user, user)
+            self.execute_query_with_value(self.insert_new_user, args)
             self.connection.commit()
 
     def add_recipe(self, recipe):
-        self.connection.executemany(self.insert_new_recipe, (recipe.name, recipe.image, recipe.description,
-                                                             recipe.link, recipe.calories, recipe.time_cooking))
-        self.add_ingredients(recipe)
-        self.add_categories(recipe)
+        self.connection.executemany(self.insert_new_recipe, ((recipe.name, recipe.image, recipe.description,
+                                                              recipe.link, recipe.calories, recipe.time_cooking),))
+        self.add_ingredients(recipe.ingredients)
+        self.add_categories(recipe.categories)
         self.connection.commit()
 
-    def add_ingredients(self, recipe):
-        for i in recipe.ingredients:
-            self.cursor.execute(self.find_exist_products, i)
+    def add_ingredients(self, ingr_list):
+        self.execute_query(self.find_recept_id)
+        r_id = int(str(self.cursor.fetchone())[1:-2])
+        for i in ingr_list:
+            self.cursor.execute(self.find_exist_products, (i,))
             row = self.cursor.fetchone()
             if row is None:
                 self.add_product(i)
-            self.execute_query_with_value(self.insert_ingredient_to_recipe,
-                                          (self.execute_query(self.find_recept_id),
-                                           self.execute_query_with_value(self.find_ing_id, i)))
+            self.execute_query_with_value(self.find_ing_id, (i,))
+            ing_id = int(str(self.cursor.fetchone())[1:-2])
+            print(ing_id)
+            args = (r_id, ing_id)
+            self.execute_query_with_value(self.insert_ingredient_to_recipe, args)
 
-    def add_categories(self, recipe):
-        for c in recipe.categories:
-            self.cursor.execute(self.find_exist_category, c)
+    def add_categories(self, ceteg_list):
+        self.execute_query(self.find_recept_id)
+        r_id = int(str(self.cursor.fetchone())[1:-2])
+        for c in ceteg_list:
+            self.cursor.execute(self.find_exist_category, (c,))
             row = self.cursor.fetchone()
             if row is None:
                 self.add_category(c)
-            self.execute_query_with_value(self.insert_categoty_to_recipe,
-                                          (self.execute_query(self.find_recept_id),
-                                           self.execute_query_with_value(self.find_categ_id, c)))
+            self.execute_query_with_value(self.find_categ_id, (c,))
+            categ_id = int(str(self.cursor.fetchone())[1:-2])
+            args = (str(r_id), str(categ_id))
+            self.execute_query_with_value(self.insert_categoty_to_recipe, args)
+
+    def find_recipes(self, str_ing, filters_list=None):
+
+        pass
 
     create_products_table = """
     CREATE TABLE IF NOT EXISTS products (
@@ -177,11 +202,11 @@ class SqliteRecipes:
 
     insert_ingredient_to_recipe = """
     insert into ingredients(rec_id, pr_id)
-    values(?,?);
+    values(?, ?);
     """
 
     insert_categoty_to_recipe = """
-    insert into categories(rec_id, c_id)
+    insert into categories_of_recipes(rec_id, c_id)
     values(?,?);
     """
 
@@ -202,19 +227,28 @@ class SqliteRecipes:
     """
 
     find_ing_id = """
-    select * from ingredients where ing_name = ?;
+    select pr_id from products where pr_name = ?;
     """
 
     find_categ_id = """
-    select * from categories where c_name = ?;
+    select c_id from categories where c_name = ?;
+    """
+
+    find_rec_filter = """
+    select * from recipes r
+    join categories_of_recipes c on r.rec_id = c.rec_id
+    and c.c_id = ?;   
     """
 
 
 db = SqliteRecipes("D:\\sqlite\example2.db")
-db.execute_query(db.create_users_table)
-db.execute_query(db.create_products_table)
-db.execute_query(db.create_recipes_table)
-db.execute_query(db.create_favourites_table)
-db.execute_query(db.create_categories_table)
-db.execute_query(db.create_categ_of_rec_table)
-db.execute_query(db.create_ingredients_table)
+rec = model.recipe.Recipe('Блинчики', 'img.jpg', ['яйца', 'мука', 'молоко', 'сахар', 'соль'],
+                          'http:\\eda.ru', 'все смешать и на сковороду', '200', '30 минут', ['масленица',
+                                                                                             'на сковороде'])
+rec2 = model.recipe.Recipe('Оладушки с шоколадом', 'img2.jpg', ['яйца', 'мука', 'кефир', 'сахар', 'шоколад',
+                                                                'масло подсолнечное'], 'http:\\eda.ru',
+                           'все смешать и на сковороду пуньк-пуньк', '300',
+                           '10 минут', ['быстрые рецепты', 'на сковороде', 'завтрак'])
+#db.add_recipe(rec)
+#db.add_recipe(rec2)
+#db.execute_query_with_value(db.find_rec_filter, (3,))
