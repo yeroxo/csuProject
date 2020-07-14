@@ -334,7 +334,7 @@ rec4 = model.recipe.Recipe('Тохгхтик ням-ням', r"../photos/43LlEln
 #db.add_recipe(rec)
 #db.add_recipe(rec2)
 #db.add_recipe(rec4)
-# db.add_user('14g9ok8')
+db.add_user('14g9ok8')
 # db.add_user('668ud9')
 # db.bot_make_user_admin('14g9ok8')
 # db.bot_delete_favourite('668ud9', 2)
