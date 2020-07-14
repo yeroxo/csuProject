@@ -3,6 +3,8 @@ from sqlite3 import Error
 import model.recipe
 from urllib.request import urlretrieve
 import urllib
+import sys
+
 
 class SqliteRecipes:
     def __init__(self, path):
@@ -66,7 +68,8 @@ class SqliteRecipes:
             self.connection.commit()
 
     def add_recipe(self, recipe):
-        self.connection.executemany(self.insert_new_recipe, ((recipe.name, recipe.image, recipe.description,
+        image = self.convert_image(recipe.image)
+        self.connection.executemany(self.insert_new_recipe, ((recipe.name, image, recipe.description,
                                                               recipe.link, recipe.calories, recipe.time_cooking),))
         self.add_ingredients(recipe.ingredients)
         self.add_categories(recipe.categories)
@@ -82,7 +85,6 @@ class SqliteRecipes:
                 self.add_product(i)
             self.execute_query_with_value(self.find_ing_id, (i,))
             ing_id = int(str(self.cursor.fetchone())[1:-2])
-            print(ing_id)
             args = (r_id, ing_id)
             self.execute_query_with_value(self.insert_ingredient_to_recipe, args)
 
@@ -100,15 +102,35 @@ class SqliteRecipes:
             self.execute_query_with_value(self.insert_categoty_to_recipe, args)
 
     def bot_find_recipes(self, user_id, str_ing, filters_list=None):
-        self.add_to_history(user_id,str_ing, str(filters_list))
+        self.execute_query("""select * from recipes;""")
+        area = self.cursor.fetchall()
+        print(area)
+        if filters_list is None:
+            filters_list = []
+        ing_list = str_ing.split(', ')
+        for f in filters_list:
+            area.execute(self.find_rec_filter, (f,))
+            area = area.fetchall()
+            print(self.cursor.execute(self.find_rec_filter, f))
+            self.cursor.fetchall()
+        print('фильтры пережили')
+        for i in ing_list:
+            self.execute_query_with_value(self.find_exist_products, (i,))
+            pr_id = self.cursor.fetchone()
+            if pr_id is not None:
+                self.cursor.execute("""select rec_id from ingredients where pr_id = ?;""", pr_id)
+                area = self.cursor.fetchall()
+        print('ингредиенты пережили')
+        print(area)
+        self.add_to_history(user_id, str_ing, str(filters_list))
         pass
 
     def bot_show_hisrory(self, user_id):
         self.execute_query_with_value("""select * from history where user_id like ?""", (user_id,))
 
-    def add_to_history(self,user_id, products, categories):
+    def add_to_history(self, user_id, products, categories):
         self.execute_query_with_value("""insert into history (user_id, products, categories, date_of_adding) 
-        values(?,?,?,?);""",(user_id, products, categories, self.date_now()))
+        values(?,?,?,?);""", (user_id, products, categories, self.date_now()))
 
     def bot_show_categories(self):
         self.execute_query("""select * from categories;""")
@@ -121,8 +143,9 @@ class SqliteRecipes:
                             (user_id, str(rec_id)))
         row = self.cursor.fetchone()
         if row is None:
-            self.execute_query_with_value("""insert into favourites(rec_id, user_id, date_of_adding) values(?, ?, ?);""",
-                                      (rec_id, user_id, self.date_now()))
+            self.execute_query_with_value(
+                """insert into favourites(rec_id, user_id, date_of_adding) values(?, ?, ?);""",
+                (rec_id, user_id, self.date_now()))
 
     def date_now(self):
         self.execute_query("""SELECT date('now');""")
@@ -133,14 +156,34 @@ class SqliteRecipes:
                                       (user_id, rec_id))
 
     def bot_make_user_admin(self, user_id):
-        self.execute_query_with_value("""UPDATE users SET user_admin = TRUE WHERE user_id like ? """,(user_id,))
+        self.execute_query_with_value("""UPDATE users SET user_admin = TRUE WHERE user_id like ? """, (user_id,))
 
     def bot_delete_user_admin(self, user_id):
-        self.execute_query_with_value("""UPDATE users SET user_admin = FALSE WHERE user_id like ? """,(user_id,))
+        self.execute_query_with_value("""UPDATE users SET user_admin = FALSE WHERE user_id like ? """, (user_id,))
+
+    def read_image(self, img_path):
+        try:
+            fin = open(img_path, "rb")
+            img = fin.read()
+            print('картинку считали')
+            return img
+
+        except IOError:
+            print("Error")
+            sys.exit(1)
+
+        finally:
+            if fin:
+                fin.close()
+
+    def convert_image(self, img_path):
+        data = self.read_image(img_path)
+        binary = sqlite3.Binary(data)
+        return binary
 
     def download_image(self, img_url, path):
         urllib.parse.quote(':')
-        urlretrieve(img_url, path)
+        return urlretrieve(img_url, path)
 
     create_products_table = """
     CREATE TABLE IF NOT EXISTS products (
@@ -163,7 +206,7 @@ class SqliteRecipes:
       rec_image BLOB NOT NULL,
       recipe TEXT NOT NULL,
       rec_link TEXT,
-      rec_calories TEXT,
+      rec_calories,
       rec_time TEXT
     );
     """
@@ -245,7 +288,7 @@ class SqliteRecipes:
     """
 
     find_exist_products = """
-    select * from products where pr_name = ?;
+    select pr_id from products where pr_name = ?;
     """
 
     find_exist_category = """
@@ -275,22 +318,27 @@ class SqliteRecipes:
     """
 
 
-db = SqliteRecipes("D:\\sqlite\example.db")
-rec = model.recipe.Recipe('Блинчики', 'img.jpg', ['яйца', 'мука', 'молоко', 'сахар', 'соль'],
+db = SqliteRecipes("D:\\sqlite\example2.db")
+rec = model.recipe.Recipe('Блинчики', r"C:\Users\Admin\Desktop\я\kek.jpg", ['яйца', 'мука', 'молоко', 'сахар', 'соль'],
                           'http:\\eda.ru', 'все смешать и на сковороду', '200', '30 минут', ['масленица',
                                                                                              'на сковороде'])
-rec2 = model.recipe.Recipe('Оладушки с шоколадом', 'img2.jpg', ['яйца', 'мука', 'кефир', 'сахар', 'шоколад',
-                                                                'масло подсолнечное'], 'http:\\eda.ru',
+rec2 = model.recipe.Recipe('Оладушки с шоколадом', r"C:\Users\Admin\Desktop\я\kek.jpg",
+                           ['яйца', 'мука', 'кефир', 'сахар', 'шоколад',
+                            'масло подсолнечное'], 'http:\\eda.ru',
                            'все смешать и на сковороду пуньк-пуньк', '300',
                            '10 минут', ['быстрые рецепты', 'на сковороде', 'завтрак'])
+rec4 = model.recipe.Recipe('Тохгхтик ням-ням', r"C:\Users\Admin\Desktop\я\kek.jpg",
+                           ['яйца', 'мука', 'молоко', 'сахар', 'сгущеное молоко', 'орехи'],
+                           'http:\\eda.ru', 'тяп-ляп и готово', '700', '31 час', ['десерты', 'торты', 'день рождения'])
+
 #db.add_recipe(rec)
 #db.add_recipe(rec2)
-#db.add_user('14g9ok8')
-#db.add_user('668ud9')
-#db.bot_make_user_admin('14g9ok8')
-#db.bot_delete_favourite('668ud9', 2)
-#db.bot_add_favourite('668ud9', 1)
-#print(db.date_now())
-#db.bot_find_recipes('668ud9','яйца, мука','завтрак')
-db.download_image('https://eda.ru/img/eda/c620x415i/s2.eda.ru/StaticContent/Photos/120213175531/180415114517/p_O.jpg', r'тут путь сохранения')
-
+# db.add_recipe(rec4)
+# db.add_user('14g9ok8')
+# db.add_user('668ud9')
+# db.bot_make_user_admin('14g9ok8')
+# db.bot_delete_favourite('668ud9', 2)
+# db.bot_add_favourite('668ud9', 1)
+# print(db.date_now())
+#db.bot_find_recipes('668ud9', 'яйца, мука','масленица')
+# db.download_image('https://eda.ru/img/eda/c620x415i/s2.eda.ru/StaticContent/Photos/120213175531/180415114517/p_O.jpg', r'тут путь сохранения')
