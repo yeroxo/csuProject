@@ -16,8 +16,9 @@ class CrawlerEdaRu:
 
     def get_recipes_links(self):
         page_links = []
-        for page_num in range(3329):
+        for page_num in range(100):
             page_links.append(self.url + '?page=' + str(page_num + 1))
+        print(page_links)
         for page in page_links:
             html = self.get_html(page)
             if html.status_code == 200:
@@ -29,6 +30,7 @@ class CrawlerEdaRu:
                                       .find('a').get('href'))
             else:
                 print("error")
+        print(self.links)
         return self.links
 
 
@@ -57,6 +59,20 @@ class ParserEdaRu:
         for c in categ:
             arr_categ.append(c.get_text())
         return arr_categ
+    
+    def get_calories(self, item):
+        cal = item.find('p', class_='nutrition__weight')
+        if cal is not None:
+            return cal.get_text()
+        else:
+            return None
+
+    def get_time(self, item):
+        time = item.find('span', class_='prep-time')
+        if time is not None:
+            return time.get_text(strip=True)
+        else:
+            return None
 
     def get_content(self, html, url):
         soup = BeautifulSoup(html, 'html.parser')
@@ -67,8 +83,8 @@ class ParserEdaRu:
             'ingredients': self.get_ingredients(item),
             'link': url,
             'description': self.get_steps(item),
-            'calories': item.find('p', class_='nutrition__weight').get_text(),
-            'time_cooking': item.find('span', class_='prep-time').get_text(strip=True),
+            'calories': self.get_calories(item),
+            'time_cooking': self.get_time(item),
             'categories': self.get_categories(item)
         }
         print(recipe)
@@ -76,14 +92,14 @@ class ParserEdaRu:
 
     def parse(self, list):
         for l in list:
-            html = CrawlerEdaRu.get_html(CrawlerEdaRu(), l)
+            html = CrawlerEdaRu.get_html(CrawlerEdaRu(),l)
             if html.status_code == 200:
                 self.get_content(html.text, l)
             else:
                 print("error")
 
-
-list = ['https://eda.ru/recepty/vypechka-deserty/oladi-iz-kabachkov-klassicheskie-28540',
-        'https://eda.ru/recepty/vypechka-deserty/tvorozhnij-desert-bez-vipechki-33617']
-p = ParserEdaRu()
-p.parse(list)
+crawler = CrawlerEdaRu()
+parser = ParserEdaRu()
+#parser.parse(['https://eda.ru/recepty/zavtraki/sirniki-iz-tvoroga-18506', 'https://eda.ru/recepty/supy/sirnij-sup-po-francuzski-s-kuricej-32614'])
+#crawler.get_recipes_links()
+parser.parse(crawler.get_recipes_links())
