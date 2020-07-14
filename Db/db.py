@@ -1,7 +1,7 @@
 import sqlite3
 from sqlite3 import Error
 import model.recipe
-
+import Scrapper
 
 class SqliteRecipes:
     def __init__(self, path):
@@ -27,15 +27,6 @@ class SqliteRecipes:
         except Error as e:
             print(f"The error '{e}' occurred")
 
-    def execute_read_query(self, query):
-        result = None
-        try:
-            self.cursor.execute(query)
-            result = self.cursor.fetchall()
-            return result
-        except Error as e:
-            print(f"The error '{e}' occurred")
-
     def execute_query_with_value(self, query, value):
         try:
             self.cursor.execute(query, value)
@@ -52,6 +43,7 @@ class SqliteRecipes:
         self.execute_query(self.create_favourites_table)
         self.execute_query(self.create_categories_table)
         self.execute_query(self.create_categ_of_rec_table)
+        self.execute_query(self.create_history_table)
 
     def add_product(self, product):
         args = (product,)
@@ -66,7 +58,7 @@ class SqliteRecipes:
     def add_user(self, user):
         args = (user,)
         cursor = self.connection.cursor()
-        cursor.execute(self.find_exist_user, user)
+        cursor.execute(self.find_exist_user, args)
         row = cursor.fetchone()
         if row is None:
             self.execute_query_with_value(self.insert_new_user, args)
@@ -106,9 +98,40 @@ class SqliteRecipes:
             args = (str(r_id), str(categ_id))
             self.execute_query_with_value(self.insert_categoty_to_recipe, args)
 
-    def find_recipes(self, str_ing, filters_list=None):
+    def bot_find_recipes(self, str_ing, filters_list=None):
 
         pass
+
+    def bot_show_hisrory(self, user_id):
+        self.execute_query_with_value("""select * from history where user_id like ?""", (user_id,))
+
+    def bot_show_categories(self):
+        self.execute_query("""select * from categories;""")
+
+    def bot_show_favourites(self, user_id):
+        self.execute_query_with_value("""select * from favourites where user_id like ?""", (user_id,))
+
+    def bot_add_favourite(self, user_id, rec_id):
+        self.cursor.execute("""select * from favourites where user_id like ? and rec_id = ?""",
+                            (user_id, rec_id))
+        row = self.cursor.fetchone()
+        if row is None:
+            self.execute_query_with_value("""insert into favourites(rec_id, user_id, date_of_adding) values(?, ?, ?);""",
+                                      (rec_id, user_id, self.date_now()))
+
+    def date_now(self):
+        self.execute_query("""SELECT date('now');""")
+        return self.cursor.fetchone()
+
+    def bot_delete_favourite(self, user_id, rec_id):
+        self.execute_query_with_value("""delete from favourites where user_id like ? and rec_id = ?""",
+                                      (rec_id, user_id))
+        
+    def bot_make_user_admin(self, user_id):
+        self.execute_query_with_value("""UPDATE users SET user_admin = TRUE WHERE user_id like ? """,(user_id,))
+
+    def bot_delete_user_admin(self, user_id):
+        self.execute_query_with_value("""UPDATE users SET user_admin = FALSE WHERE user_id like ? """,(user_id,))
 
     create_products_table = """
     CREATE TABLE IF NOT EXISTS products (
@@ -147,15 +170,25 @@ class SqliteRecipes:
 
     create_users_table = """
        CREATE TABLE IF NOT EXISTS users (
-         user_id INTEGER PRIMARY KEY,
+         user_id TEXT PRIMARY KEY,
          user_admin BOOLEAN NOT NULL
        );
        """
+
+    create_history_table = """
+           CREATE TABLE IF NOT EXISTS history (
+             user_id TEXT NOT NULL,
+             products TEXT,
+             categories TEXT,
+             FOREIGN KEY (user_id) REFERENCES users(user_id)
+           );
+           """
 
     create_favourites_table = """
         CREATE TABLE IF NOT EXISTS favourites (
            rec_id INTEGER NOT NULL,
            user_id INTEGER NOT NULL,
+           date_of_adding DATE NOT NULL,
            FOREIGN KEY (rec_id) REFERENCES recipes(rec_id),
            FOREIGN KEY (user_id) REFERENCES users(user_id)
         );
@@ -185,15 +218,6 @@ class SqliteRecipes:
     delete_user = """
         delete from users where user_id = ?
     """
-
-    insert_new_favourite = """
-       insert into favourites(rec_id, user_id) values(?, ?);
-       """
-
-    delete_favourite = """
-           delete from favourites 
-           where user_id = ? and rec_id = ?
-       """
 
     insert_new_recipe = """
     insert into recipes(rec_name, rec_image, recipe, rec_link, rec_calories, rec_time) 
@@ -241,7 +265,7 @@ class SqliteRecipes:
     """
 
 
-db = SqliteRecipes("D:\\sqlite\example2.db")
+db = SqliteRecipes("D:\\sqlite\example3.db")
 rec = model.recipe.Recipe('Блинчики', 'img.jpg', ['яйца', 'мука', 'молоко', 'сахар', 'соль'],
                           'http:\\eda.ru', 'все смешать и на сковороду', '200', '30 минут', ['масленица',
                                                                                              'на сковороде'])
@@ -251,4 +275,7 @@ rec2 = model.recipe.Recipe('Оладушки с шоколадом', 'img2.jpg',
                            '10 минут', ['быстрые рецепты', 'на сковороде', 'завтрак'])
 #db.add_recipe(rec)
 #db.add_recipe(rec2)
-#db.execute_query_with_value(db.find_rec_filter, (3,))
+db.add_user('14g9ok8')
+db.add_user('668ud9')
+db.bot_make_user_admin('14g9ok8')
+db.bot_add_favourite('668ud9', 1)
