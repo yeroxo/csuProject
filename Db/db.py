@@ -319,26 +319,26 @@ class SqliteRecipes:
 
 
 db = SqliteRecipes("D:\\sqlite\example2.db")
-rec = model.recipe.Recipe('Блинчики', r"C:\Users\Admin\Desktop\я\kek.jpg", ['яйца', 'мука', 'молоко', 'сахар', 'соль'],
+rec = model.recipe.Recipe('Блинчики', r"../photos/43LlEln7bzo.jpg", ['яйца', 'мука', 'молоко', 'сахар', 'соль'],
                           'http:\\eda.ru', 'все смешать и на сковороду', '200', '30 минут', ['масленица',
                                                                                              'на сковороде'])
-rec2 = model.recipe.Recipe('Оладушки с шоколадом', r"C:\Users\Admin\Desktop\я\kek.jpg",
+rec2 = model.recipe.Recipe('Оладушки с шоколадом', r"../photos/UxXWRfrboy4.jpg",
                            ['яйца', 'мука', 'кефир', 'сахар', 'шоколад',
                             'масло подсолнечное'], 'http:\\eda.ru',
                            'все смешать и на сковороду пуньк-пуньк', '300',
                            '10 минут', ['быстрые рецепты', 'на сковороде', 'завтрак'])
-rec4 = model.recipe.Recipe('Тохгхтик ням-ням', r"C:\Users\Admin\Desktop\я\kek.jpg",
+rec4 = model.recipe.Recipe('Тохгхтик ням-ням', r"../photos/43LlEln7bzo.jpg",
                            ['яйца', 'мука', 'молоко', 'сахар', 'сгущеное молоко', 'орехи'],
                            'http:\\eda.ru', 'тяп-ляп и готово', '700', '31 час', ['десерты', 'торты', 'день рождения'])
 
 #db.add_recipe(rec)
 #db.add_recipe(rec2)
-# db.add_recipe(rec4)
+#db.add_recipe(rec4)
 # db.add_user('14g9ok8')
 # db.add_user('668ud9')
 # db.bot_make_user_admin('14g9ok8')
 # db.bot_delete_favourite('668ud9', 2)
 # db.bot_add_favourite('668ud9', 1)
 # print(db.date_now())
-#db.bot_find_recipes('668ud9', 'яйца, мука','масленица')
+# db.bot_find_recipes('668ud9', 'яйца, мука','масленица')
 # db.download_image('https://eda.ru/img/eda/c620x415i/s2.eda.ru/StaticContent/Photos/120213175531/180415114517/p_O.jpg', r'тут путь сохранения')
