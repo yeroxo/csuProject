@@ -7,8 +7,8 @@ import sys
 
 
 class SqliteRecipes:
-    def __init__(self, path):
-        self.connection = self.create_connection(path)
+    def __init__(self):
+        self.connection = self.create_connection("../Db/database.db")
         self.cursor = self.connection.cursor()
         self.create_tables()
 
@@ -344,6 +344,17 @@ if __name__ == '__main__':
                                ['яйца', 'мука', 'молоко', 'сахар', 'сгущеное молоко', 'орехи'],
                                'http:\\eda.ru', 'тяп-ляп и готово', '700', '31 час', ['десерты', 'торты', 'день рождения'])
 
+#db.add_recipe(rec)
+#db.add_recipe(rec2)
+#db.add_recipe(rec4)
+#db.add_user('14g9ok8')
+# db.add_user('668ud9')
+# db.bot_make_user_admin('14g9ok8')
+# db.bot_delete_favourite('668ud9', 2)
+# db.bot_add_favourite('668ud9', 1)
+# print(db.date_now())
+# db.bot_find_recipes('668ud9', 'яйца, мука','масленица')
+# db.download_image('https://eda.ru/img/eda/c620x415i/s2.eda.ru/StaticContent/Photos/120213175531/180415114517/p_O.jpg', r'тут путь сохранения')
     #db.add_recipe(rec)
     #db.add_recipe(rec2)
     #db.add_recipe(rec4)
