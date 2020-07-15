@@ -1,4 +1,5 @@
 import sqlite3
+from collections import Counter
 from sqlite3 import Error
 import model.recipe
 from urllib.request import urlretrieve
@@ -110,29 +111,63 @@ class SqliteRecipes:
             args = (str(r_id), str(categ_id))
             self.execute_query_with_value(self.insert_categoty_to_recipe, args)
 
-    def bot_find_recipes(self, user_id, str_ing, filters_list=None):
-        self.execute_query("""select * from recipes;""")
-        area = self.cursor.fetchall()
-        print(area)
-        if filters_list is None:
-            filters_list = []
-        ing_list = str_ing.split(', ')
-        for f in filters_list:
-            area.execute(self.find_rec_filter, (f,))
-            area = area.fetchall()
-            print(self.cursor.execute(self.find_rec_filter, f))
-            self.cursor.fetchall()
-        print('фильтры пережили')
-        for i in ing_list:
-            self.execute_query_with_value(self.find_exist_products, (i,))
-            pr_id = self.cursor.fetchone()
-            if pr_id is not None:
-                self.cursor.execute("""select rec_id from ingredients where pr_id = ?;""", pr_id)
-                area = self.cursor.fetchall()
-        print('ингредиенты пережили')
-        print(area)
-        self.add_to_history(user_id, str_ing, str(filters_list))
-        pass
+    def bot_find_recipes(self, user_id, str_ing=None, str_filt=None):
+        filt_res = []
+        ing_res = []
+        if str_filt is not None:
+            filters_list = str_filt.split(', ')
+            filt_res = self.bot_select_by_category(filters_list)
+        if str_ing is not None:
+            ing_list = str_ing.split(', ')
+            ing_res = self.bot_select_by_ingredients(ing_list)
+        self.add_to_history(user_id, str_ing, str_filt)
+        self.connection.commit()
+        if str_ing is not None and str_filt is not None:
+            final_result = list((Counter(ing_res) & Counter(filt_res)).elements())
+            print(final_result)
+            return final_result
+        if str_ing is None and str_filt is None:
+            return []
+        if str_ing is not None:
+            print(ing_res)
+            return ing_res
+        else:
+            print(filt_res)
+            return filt_res
+
+    def find_with_categories(self, elem):
+        self.execute_query_with_value("""SELECT distinct c1.rec_id FROM categories_of_recipes c1 
+                            join categories c2 on c1.c_id = c2.c_id and c2.c_name LIKE ?""", (elem,))
+        return self.cursor.fetchall()
+
+    def bot_select_by_category(self, categ_list):
+        final_result = self.find_with_categories(categ_list[0])
+        if len(categ_list) != 1:
+            for categ in categ_list:
+                res = self.find_with_categories(categ)
+                final_result = list((Counter(res) & Counter(final_result)).elements())
+        for i in final_result:
+            final_result.remove(i)
+            i = i[0]
+            final_result.insert(0, i)
+        return final_result
+
+    def find_with_ingredients(self, elem):
+        self.execute_query_with_value("""SELECT distinct c1.rec_id FROM ingredients c1 
+                            join products c2 on c1.pr_id = c2.pr_id and c2.pr_name LIKE ?""", (elem,))
+        return self.cursor.fetchall()
+
+    def bot_select_by_ingredients(self, ingr_list):
+        final_result = self.find_with_ingredients(ingr_list[0])
+        if len(ingr_list) != 1:
+            for ingr in ingr_list:
+                res = self.find_with_ingredients(ingr)
+                final_result = list((Counter(res) & Counter(final_result)).elements())
+        for i in final_result:
+            final_result.remove(i)
+            i = i[0]
+            final_result.insert(0, i)
+        return final_result
 
     def bot_show_hisrory(self, user_id):
         self.execute_query_with_value("""select * from history where user_id like ?""", (user_id,))
@@ -171,7 +206,7 @@ class SqliteRecipes:
         self.execute_query_with_value("""UPDATE users SET user_admin = FALSE WHERE user_id like ? """, (user_id,))
 
     def read_image(self, img_path):
-        fin = False
+
         try:
             er = 1
             fin = open(img_path, "rb")
@@ -236,19 +271,20 @@ class SqliteRecipes:
     create_users_table = """
        CREATE TABLE IF NOT EXISTS users (
          user_id TEXT PRIMARY KEY,
-         user_admin BOOLEAN NOT NULL
+         user_admin BOOLEAN NOT NULL,
+         date_of_adding DATE NOT NULL
        );
        """
 
     create_history_table = """
-           CREATE TABLE IF NOT EXISTS history (
-             user_id TEXT NOT NULL,
-             products TEXT,
-             categories TEXT,
-             date_of_adding DATE NOT NULL,
-             FOREIGN KEY (user_id) REFERENCES users(user_id)
-           );
-           """
+       CREATE TABLE IF NOT EXISTS history (
+         user_id TEXT NOT NULL,
+         products TEXT,
+         categories TEXT,
+         date_of_adding DATE NOT NULL,
+         FOREIGN KEY (user_id) REFERENCES users(user_id)
+       );
+       """
 
     create_favourites_table = """
         CREATE TABLE IF NOT EXISTS favourites (
@@ -278,7 +314,7 @@ class SqliteRecipes:
        """
 
     insert_new_user = """
-       insert into users(user_id, user_admin) values(?, FALSE);
+       insert into users(user_id, user_admin, date_of_adding) values(?, FALSE, date('now'));
        """
 
     delete_user = """
@@ -331,7 +367,7 @@ class SqliteRecipes:
     """
 
 if __name__ == '__main__':
-    db = SqliteRecipes("C:\\Users\\vertn\\Desktop\\example.db")
+    db = SqliteRecipes()
     rec = model.recipe.Recipe('Блинчики', r"../photos/43LlEln7bzo.jpg", ['яйца', 'мука', 'молоко', 'сахар', 'соль'],
                               'http:\\eda.ru', 'все смешать и на сковороду', '200', '30 минут', ['масленица',
                                                                                                  'на сковороде'])
@@ -344,10 +380,10 @@ if __name__ == '__main__':
                                ['яйца', 'мука', 'молоко', 'сахар', 'сгущеное молоко', 'орехи'],
                                'http:\\eda.ru', 'тяп-ляп и готово', '700', '31 час', ['десерты', 'торты', 'день рождения'])
 
-#db.add_recipe(rec)
-#db.add_recipe(rec2)
-#db.add_recipe(rec4)
-#db.add_user('14g9ok8')
+# db.add_recipe(rec)
+# db.add_recipe(rec2)
+# db.add_recipe(rec4)
+# db.add_user('14g9ok8')
 # db.add_user('668ud9')
 # db.bot_make_user_admin('14g9ok8')
 # db.bot_delete_favourite('668ud9', 2)
@@ -355,14 +391,8 @@ if __name__ == '__main__':
 # print(db.date_now())
 # db.bot_find_recipes('668ud9', 'яйца, мука','масленица')
 # db.download_image('https://eda.ru/img/eda/c620x415i/s2.eda.ru/StaticContent/Photos/120213175531/180415114517/p_O.jpg', r'тут путь сохранения')
-    #db.add_recipe(rec)
-    #db.add_recipe(rec2)
-    #db.add_recipe(rec4)
-    # db.add_user('14g9ok8')
-    # db.add_user('668ud9')
-    # db.bot_make_user_admin('14g9ok8')
-    # db.bot_delete_favourite('668ud9', 2)
-    # db.bot_add_favourite('668ud9', 1)
-    # print(db.date_now())
-    # db.bot_find_recipes('668ud9', 'яйца, мука','масленица')
-    # db.download_image('https://eda.ru/img/eda/c620x415i/s2.eda.ru/StaticContent/Photos/120213175531/180415114517/p_O.jpg', r'тут путь сохранения')
+#db.bot_select_by_category(['завтрак', 'на сковороде'])
+#db.bot_select_by_ingredients(['мука','яйца','шоколад'])
+db.bot_find_recipes('668ud9','мука, яйца', 'завтрак')
+db.bot_find_recipes('668ud9','мука, яйца',None)
+db.bot_find_recipes('668ud9',None,'день рождения')
