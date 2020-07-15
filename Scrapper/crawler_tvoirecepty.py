@@ -1,8 +1,9 @@
 import requests as req
 from bs4 import BeautifulSoup
+from abstract_classes import Crawler
 
 
-class CrawlerTvoirecepty:
+class CrawlerTvoirecepty(Crawler):
     def __init__(self):
         self.links = []
         self.url = 'https://tvoirecepty.ru/recepty?page='
@@ -31,7 +32,7 @@ class CrawlerTvoirecepty:
 
 if __name__ == '__main__':
     a = CrawlerTvoirecepty()
-    links = a.get_recipes_links()
-    for i in links:
-        print(i)
-    print(len(links))
+#    links = a.get_recipes_links()
+ #   for i in links:
+  #      print(i)
+   # print(len(links))

@@ -4,9 +4,10 @@ from urllib.request import urlretrieve
 import urllib
 from model.recipe import Recipe
 from Db.db import SqliteRecipes
+from abstract_classes import *
 
 
-class CrawlerEdaRu:
+class CrawlerEdaRu(Crawler):
     def __init__(self):
         self.links = []
         self.url = 'https://eda.ru/recepty'
@@ -20,7 +21,7 @@ class CrawlerEdaRu:
 
     def get_recipes_links(self):
         page_links = []
-        for page_num in range(325):
+        for page_num in range(1):
             page_links.append(self.url + '?page=' + str(page_num + 1))
         print(page_links)
         for page in page_links:
@@ -38,7 +39,7 @@ class CrawlerEdaRu:
         return self.links
 
 
-class ParserEdaRu:
+class ParserEdaRu(Parser):
 
     def get_steps(self, item):
         steps = item.find_all('span', class_='instruction__description')
@@ -119,7 +120,7 @@ class ParserEdaRu:
                 print("error")
 
 #crawler = CrawlerEdaRu()
-parser = ParserEdaRu()
+#parser = ParserEdaRu()
 # parser.parse(['https://eda.ru/recepty/zavtraki/sirniki-iz-tvoroga-18506', 'https://eda.ru/recepty/supy/sirnij-sup-po-francuzski-s-kuricej-32614'])
 # crawler.get_recipes_links()
-parser.parse(['https://eda.ru/recepty/pasta-picca/spagetti-karbonara-s-krasnym-lukom-17614'])
+#parser.parse(['https://eda.ru/recepty/pasta-picca/spagetti-karbonara-s-krasnym-lukom-17614'])
