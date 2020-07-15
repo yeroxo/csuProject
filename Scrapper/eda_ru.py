@@ -16,7 +16,7 @@ class CrawlerEdaRu:
 
     def get_recipes_links(self):
         page_links = []
-        for page_num in range(100):
+        for page_num in range(325):
             page_links.append(self.url + '?page=' + str(page_num + 1))
         print(page_links)
         for page in page_links:
