@@ -69,9 +69,6 @@ class SqliteRecipes:
             self.connection.commit()
 
     def add_recipe(self, recipe):
-        path = self.get_img_path(recipe.image)
-        image = self.download_image(recipe.image, path)
-        recipe.image = path
         image = self.convert_image(recipe.image)
         self.connection.executemany(self.insert_new_recipe, ((recipe.name, image, recipe.description,
                                                               recipe.link, recipe.calories, recipe.time_cooking),))
