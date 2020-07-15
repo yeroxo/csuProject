@@ -68,12 +68,21 @@ class SqliteRecipes:
             self.connection.commit()
 
     def add_recipe(self, recipe):
+        path = self.get_img_path(recipe.image)
+        image = self.download_image(recipe.image, path )
+        recipe.image = path
         image = self.convert_image(recipe.image)
         self.connection.executemany(self.insert_new_recipe, ((recipe.name, image, recipe.description,
                                                               recipe.link, recipe.calories, recipe.time_cooking),))
         self.add_ingredients(recipe.ingredients)
         self.add_categories(recipe.categories)
         self.connection.commit()
+
+    def get_img_path(self, link):
+        elements = link.split('/')
+        name = elements[-1]
+        print(f'C:\\Users\\vertn\\Desktop\\images\\{name}')
+        return f'C:\\Users\\vertn\\Desktop\\images\\{name}'
 
     def add_ingredients(self, ingr_list):
         self.execute_query(self.find_recept_id)
@@ -162,14 +171,18 @@ class SqliteRecipes:
         self.execute_query_with_value("""UPDATE users SET user_admin = FALSE WHERE user_id like ? """, (user_id,))
 
     def read_image(self, img_path):
+        fin = False
         try:
+            er = 1
             fin = open(img_path, "rb")
+            er = 2
             img = fin.read()
             print('картинку считали')
             return img
 
         except IOError:
             print("Error")
+            print(er)
             sys.exit(1)
 
         finally:
@@ -317,19 +330,19 @@ class SqliteRecipes:
     and c.c_id = ?;   
     """
 
-
-db = SqliteRecipes()
-rec = model.recipe.Recipe('Блинчики', r"../photos/43LlEln7bzo.jpg", ['яйца', 'мука', 'молоко', 'сахар', 'соль'],
-                          'http:\\eda.ru', 'все смешать и на сковороду', '200', '30 минут', ['масленица',
-                                                                                             'на сковороде'])
-rec2 = model.recipe.Recipe('Оладушки с шоколадом', r"../photos/UxXWRfrboy4.jpg",
-                           ['яйца', 'мука', 'кефир', 'сахар', 'шоколад',
-                            'масло подсолнечное'], 'http:\\eda.ru',
-                           'все смешать и на сковороду пуньк-пуньк', '300',
-                           '10 минут', ['быстрые рецепты', 'на сковороде', 'завтрак'])
-rec4 = model.recipe.Recipe('Тохгхтик ням-ням', r"../photos/43LlEln7bzo.jpg",
-                           ['яйца', 'мука', 'молоко', 'сахар', 'сгущеное молоко', 'орехи'],
-                           'http:\\eda.ru', 'тяп-ляп и готово', '700', '31 час', ['десерты', 'торты', 'день рождения'])
+if __name__ == '__main__':
+    db = SqliteRecipes("C:\\Users\\vertn\\Desktop\\example.db")
+    rec = model.recipe.Recipe('Блинчики', r"../photos/43LlEln7bzo.jpg", ['яйца', 'мука', 'молоко', 'сахар', 'соль'],
+                              'http:\\eda.ru', 'все смешать и на сковороду', '200', '30 минут', ['масленица',
+                                                                                                 'на сковороде'])
+    rec2 = model.recipe.Recipe('Оладушки с шоколадом', r"../photos/UxXWRfrboy4.jpg",
+                               ['яйца', 'мука', 'кефир', 'сахар', 'шоколад',
+                                'масло подсолнечное'], 'http:\\eda.ru',
+                               'все смешать и на сковороду пуньк-пуньк', '300',
+                               '10 минут', ['быстрые рецепты', 'на сковороде', 'завтрак'])
+    rec4 = model.recipe.Recipe('Тохгхтик ням-ням', r"../photos/43LlEln7bzo.jpg",
+                               ['яйца', 'мука', 'молоко', 'сахар', 'сгущеное молоко', 'орехи'],
+                               'http:\\eda.ru', 'тяп-ляп и готово', '700', '31 час', ['десерты', 'торты', 'день рождения'])
 
 #db.add_recipe(rec)
 #db.add_recipe(rec2)
@@ -342,3 +355,14 @@ rec4 = model.recipe.Recipe('Тохгхтик ням-ням', r"../photos/43LlEln
 # print(db.date_now())
 # db.bot_find_recipes('668ud9', 'яйца, мука','масленица')
 # db.download_image('https://eda.ru/img/eda/c620x415i/s2.eda.ru/StaticContent/Photos/120213175531/180415114517/p_O.jpg', r'тут путь сохранения')
+    #db.add_recipe(rec)
+    #db.add_recipe(rec2)
+    #db.add_recipe(rec4)
+    # db.add_user('14g9ok8')
+    # db.add_user('668ud9')
+    # db.bot_make_user_admin('14g9ok8')
+    # db.bot_delete_favourite('668ud9', 2)
+    # db.bot_add_favourite('668ud9', 1)
+    # print(db.date_now())
+    # db.bot_find_recipes('668ud9', 'яйца, мука','масленица')
+    # db.download_image('https://eda.ru/img/eda/c620x415i/s2.eda.ru/StaticContent/Photos/120213175531/180415114517/p_O.jpg', r'тут путь сохранения')

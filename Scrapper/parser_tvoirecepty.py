@@ -1,6 +1,8 @@
 import requests as req
 from bs4 import BeautifulSoup
 from crawler_tvoirecepty import CrawlerTvoirecepty
+from model.recipe import Recipe
+from Db.db import SqliteRecipes
 
 session = req.session()
 html = session.get('https://tvoirecepty.ru/recept/tsimes').text
@@ -15,6 +17,10 @@ class ParserTvoirecepty:
         info = item.find_all('div', class_='instruction row-xs margin-bottom-20')
         for i in range(len(info) - 1):
             instructions += info[i].text.replace('  ', '') + '\n'
+        if instructions == '':
+            info = item.find_all('div', class_='instruction col-sm-6 nopadding-right pull-right row-xs')
+            for i in range(len(info) - 1):
+                instructions += info[i].text.replace('  ', '') + '\n'
         return instructions
 
     def get_ingredients(self, item):
@@ -58,21 +64,42 @@ class ParserTvoirecepty:
             'time_cooking': self.get_time(soup),
             'categories': self.get_categories(soup)
         }
+        recipe_rec = Recipe(recipe['name'], recipe['image'], recipe['ingredients'], recipe['link'],
+                            recipe['description'], recipe['calories'], recipe['time_cooking'], recipe['categories'])
         print(recipe)
-        return recipe
+        return recipe_rec
 
 
     def parse(self, list):
+        db = SqliteRecipes("C:\\Users\\vertn\\Desktop\\example.db")
         for l in list:
             html = CrawlerTvoirecepty.get_html(CrawlerTvoirecepty(), l)
             if html.status_code == 200:
-                self.get_content(html.text, l)
+                rec = self.get_content(html.text, l)
+                db.add_recipe(rec)
             else:
                 print("error")
 
 
+#c = CrawlerTvoirecepty().get_recipes_links()
+#c = set(c)
+#print(len(c))
+#print(c)
 p = ParserTvoirecepty()
-p.parse(b)
+p.parse(['https://tvoirecepty.ru/recept/bulochki-s-dzhemom'])
+
+
+
+
+
+
+
+
+
+
+
+
+
 def get_title(soup):
     info = soup.find('div', class_='title-line container').find('h1', class_='pull-left fn').text
     return info
