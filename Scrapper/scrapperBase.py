@@ -1,6 +1,8 @@
 from Db.db import SqliteRecipes
-from parser_tvoirecepty import *
-from eda_ru import *
+
+from Scrapper.crawler_tvoirecepty import CrawlerTvoirecepty
+from Scrapper.parser_tvoirecepty import ParserTvoirecepty
+
 
 class Scrapper:
     def __init__(self):
@@ -18,6 +20,7 @@ class Scrapper:
                 self.db.add_recipe(rec)
             else:
                 print("error")
+
 
 c = Scrapper()
 c.parse_site(CrawlerTvoirecepty(), ParserTvoirecepty())

@@ -4,7 +4,7 @@ from urllib.request import urlretrieve
 import urllib
 from model.recipe import Recipe
 from Db.db import SqliteRecipes
-from abstract_classes import *
+from Scrapper.abstract_classes import *
 
 
 class CrawlerEdaRu(Crawler):

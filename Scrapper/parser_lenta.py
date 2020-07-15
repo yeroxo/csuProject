@@ -1,6 +1,6 @@
 import requests as req
 from bs4 import BeautifulSoup
-from crawler_lenta import CrawlerLenta
+from Scrapper.crawler_lenta import CrawlerLenta
 import random
 from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod, abstractproperty
 
+
 class Crawler(ABC):
 
     @abstractmethod
@@ -9,6 +10,7 @@ class Crawler(ABC):
     @abstractmethod
     def get_recipes_links(self):
         pass
+
 
 class Parser(ABC):
 
