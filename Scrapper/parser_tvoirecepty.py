@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 from crawler_tvoirecepty import CrawlerTvoirecepty
 from model.recipe import Recipe
 from Db.db import SqliteRecipes
+from urllib.request import urlretrieve
+import urllib
 
 session = req.session()
 html = session.get('https://tvoirecepty.ru/recept/tsimes').text
@@ -56,7 +58,7 @@ class ParserTvoirecepty:
         soup = BeautifulSoup(html, 'lxml')
         recipe = {
             'name': soup.find('div', class_='title-line container').find('h1', class_='pull-left fn').text,
-            'image':  soup.find('div', class_='crop-xs col-xs-12 nopadding').find('img').get('src'),
+            'image':  self.get_image(soup),
             'ingredients': self.get_ingredients(soup),
             'link': url,
             'description': self.get_steps(soup),
@@ -70,8 +72,21 @@ class ParserTvoirecepty:
         return recipe_rec
 
 
+    def get_image(self, soup):
+        link = soup.find('div', class_='crop-xs col-xs-12 nopadding').find('img').get('src')
+        elements = link.split('/')
+        name = elements[-1]
+        path = f'../photos/{name}'
+        self.download_image(link, path)
+        return path
+
+    def download_image(self, img_url, path):
+        urllib.parse.quote(':')
+        return urlretrieve(img_url, path)
+
+
     def parse(self, list):
-        db = SqliteRecipes("C:\\Users\\vertn\\Desktop\\example.db")
+        db = SqliteRecipes()
         for l in list:
             html = CrawlerTvoirecepty.get_html(CrawlerTvoirecepty(), l)
             if html.status_code == 200:

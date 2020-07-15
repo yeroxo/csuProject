@@ -69,21 +69,12 @@ class SqliteRecipes:
             self.connection.commit()
 
     def add_recipe(self, recipe):
-        path = self.get_img_path(recipe.image)
-        image = self.download_image(recipe.image, path )
-        recipe.image = path
         image = self.convert_image(recipe.image)
         self.connection.executemany(self.insert_new_recipe, ((recipe.name, image, recipe.description,
                                                               recipe.link, recipe.calories, recipe.time_cooking),))
         self.add_ingredients(recipe.ingredients)
         self.add_categories(recipe.categories)
         self.connection.commit()
-
-    def get_img_path(self, link):
-        elements = link.split('/')
-        name = elements[-1]
-        print(f'../photos/{name}')
-        return f'../photos/{name}'
 
     def add_ingredients(self, ingr_list):
         self.execute_query(self.find_recept_id)
@@ -228,10 +219,6 @@ class SqliteRecipes:
         data = self.read_image(img_path)
         binary = sqlite3.Binary(data)
         return binary
-
-    def download_image(self, img_url, path):
-        urllib.parse.quote(':')
-        return urlretrieve(img_url, path)
 
     create_products_table = """
     CREATE TABLE IF NOT EXISTS products (

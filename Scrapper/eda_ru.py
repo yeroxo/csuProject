@@ -1,5 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
+from urllib.request import urlretrieve
+import urllib
+from model.recipe import Recipe
+from Db.db import SqliteRecipes
 
 
 class CrawlerEdaRu:
@@ -79,7 +83,7 @@ class ParserEdaRu:
         item = soup.find(class_='recipe')
         recipe = {
             'name': item.find('h1').get_text(strip=True).replace('\xa0', ' '),
-            'image': item.find('img').get('src'),
+            'image': self.get_image(item),
             'ingredients': self.get_ingredients(item),
             'link': url,
             'description': self.get_steps(item),
@@ -87,19 +91,35 @@ class ParserEdaRu:
             'time_cooking': self.get_time(item),
             'categories': self.get_categories(item)
         }
+        recipe_rec = Recipe(recipe['name'], recipe['image'], recipe['ingredients'], recipe['link'],
+                            recipe['description'], recipe['calories'], recipe['time_cooking'], recipe['categories'])
         print(recipe)
-        return recipe
+        return recipe_rec
+
+    def get_image(self, item):
+        link = item.find('img').get('src')
+        elements = link.split('/')
+        name = elements[-1]
+        path = f'../photos/{name}'
+        self.download_image(link, path)
+        return path
+
+    def download_image(self, img_url, path):
+        urllib.parse.quote(':')
+        return urlretrieve(img_url, path)
 
     def parse(self, list):
+        db = SqliteRecipes()
         for l in list:
             html = CrawlerEdaRu.get_html(CrawlerEdaRu(),l)
             if html.status_code == 200:
-                self.get_content(html.text, l)
+                rec = self.get_content(html.text, l)
+                db.add_recipe(rec)
             else:
                 print("error")
 
-crawler = CrawlerEdaRu()
+#crawler = CrawlerEdaRu()
 parser = ParserEdaRu()
 # parser.parse(['https://eda.ru/recepty/zavtraki/sirniki-iz-tvoroga-18506', 'https://eda.ru/recepty/supy/sirnij-sup-po-francuzski-s-kuricej-32614'])
 # crawler.get_recipes_links()
-parser.parse(crawler.get_recipes_links())
+parser.parse(['https://eda.ru/recepty/pasta-picca/spagetti-karbonara-s-krasnym-lukom-17614'])
