@@ -59,7 +59,7 @@ class ParserEdaRu:
         for c in categ:
             arr_categ.append(c.get_text())
         return arr_categ
-    
+
     def get_calories(self, item):
         cal = item.find('p', class_='nutrition__weight')
         if cal is not None:
@@ -100,6 +100,6 @@ class ParserEdaRu:
 
 crawler = CrawlerEdaRu()
 parser = ParserEdaRu()
-#parser.parse(['https://eda.ru/recepty/zavtraki/sirniki-iz-tvoroga-18506', 'https://eda.ru/recepty/supy/sirnij-sup-po-francuzski-s-kuricej-32614'])
-#crawler.get_recipes_links()
+# parser.parse(['https://eda.ru/recepty/zavtraki/sirniki-iz-tvoroga-18506', 'https://eda.ru/recepty/supy/sirnij-sup-po-francuzski-s-kuricej-32614'])
+# crawler.get_recipes_links()
 parser.parse(crawler.get_recipes_links())
