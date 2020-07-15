@@ -15,7 +15,7 @@ class CrawlerTvoirecepty:
         return req.get(url, headers=self.headers, params=params)
 
     def get_recipes_links(self):
-        for page in range(1, 5):
+        for page in range(1, 2):
             url_page = self.url + str(page)
             html = self.get_html(url_page)
             if html.status_code == 200:

@@ -137,12 +137,16 @@ def get_cal(item):
 def get_ingredients(item):
     ingredients = []
     info = item.find_all('div', class_='recipe-checkbox__label')
+#    info = item.find('div', class_='recipe-ingredients-list-container').get('data-model')
     print(info)
     for ingredient in info:
         print(ingredient.find('div', class_='recipe-checkbox__label').text)
         ingredients.append(ingredient.find('div', class_='recipe-checkbox__label').text)
     return ingredients
 
+html = req.get('https://lenta.com/recepty/recipes/v/vanilno-fruktovyy-zavtrak-s-chia/')
+soup = BeautifulSoup(html.text, 'lxml')
+print(get_ingredients(soup))
 def get_description(item):
     description = ''
     info = item.find_all('div', class_='recipe-step__content-wrapper')
