@@ -118,8 +118,8 @@ class ParserTvoirecepty(Parser):
 
 
 
-c = CrawlerTvoirecepty()
-print(c.url)
+#c = CrawlerTvoirecepty()
+#print(c.url)
 #c = set(c)
 #print(len(c))
 #print(c)

@@ -2,6 +2,8 @@ from Db.db import SqliteRecipes
 
 from Scrapper.crawler_tvoirecepty import CrawlerTvoirecepty
 from Scrapper.parser_tvoirecepty import ParserTvoirecepty
+from Scrapper.eda_ru import CrawlerEdaRu
+from Scrapper.eda_ru import ParserEdaRu
 
 
 class Scrapper:
@@ -24,4 +26,4 @@ class Scrapper:
 
 c = Scrapper()
 c.parse_site(CrawlerTvoirecepty(), ParserTvoirecepty())
-c.parse_site(CrawlerTvoirecepty(), ParserTvoirecepty())
+#c.parse_site(CrawlerEdaRu(),ParserEdaRu())
