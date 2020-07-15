@@ -82,8 +82,8 @@ class SqliteRecipes:
     def get_img_path(self, link):
         elements = link.split('/')
         name = elements[-1]
-        print(f'C:\\Users\\vertn\\Desktop\\images\\{name}')
-        return f'C:\\Users\\vertn\\Desktop\\images\\{name}'
+        print(f'../photos/{name}')
+        return f'../photos/{name}'
 
     def add_ingredients(self, ingr_list):
         self.execute_query(self.find_recept_id)
