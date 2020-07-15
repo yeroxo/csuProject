@@ -4,13 +4,13 @@ from aiogram.dispatcher.filters import Command, Text
 
 from Bot import config
 from aiogram import Bot, Dispatcher, executor, types
-from Db.db import SqliteRecipes as db
+from Db.db import SqliteRecipes as DataBase
 
 # задаем уровень логов
 logging.basicConfig(level=logging.INFO)
 
 # инициализация бд
-bd = db()
+bd = DataBase()
 
 # иницилизируем бота
 bot = Bot(token=config.API_TOKEN)
@@ -49,9 +49,10 @@ search_menu = types.ReplyKeyboardMarkup(
 
 @dp.message_handler(Command("start"))
 async def show_menu(message: types.Message):
-    await message.answer(f"Приветствуем в нашем боте {message.from_user.first_name}\n Мы поможем тебе найти рецептики",
+    await message.answer(f"Приветствуем в нашем боте {message.from_user.first_name}\nМы поможем тебе найти рецептики",
                          reply_markup=main_menu)
     bd.add_user(message.from_user.id)
+    await message.answer(f"Ваш юзер айди {message.from_user.id}")
 
 
 @dp.message_handler(Text(equals='Профиль'))
