@@ -9,11 +9,13 @@ from Db.db import SqliteRecipes as db
 # задаем уровень логов
 logging.basicConfig(level=logging.INFO)
 
+# инициализация бд
+bd = db()
+
 # иницилизируем бота
 bot = Bot(token=config.API_TOKEN)
 dp = Dispatcher(bot)
 
-bizz = db("D:\\sqlite\example2.db")
 main_menu = types.ReplyKeyboardMarkup(
     keyboard=[
         [
@@ -47,8 +49,9 @@ search_menu = types.ReplyKeyboardMarkup(
 
 @dp.message_handler(Command("start"))
 async def show_menu(message: types.Message):
-    bizz.add_user(f"{message.from_user.id}")
-    await message.answer(f"Приветствуем в нашем боте {message.from_user.first_name}\n Мы поможем тебе найти рецептики", reply_markup=main_menu)
+    await message.answer(f"Приветствуем в нашем боте {message.from_user.first_name}\n Мы поможем тебе найти рецептики",
+                         reply_markup=main_menu)
+    bd.add_user(message.from_user.id)
 
 
 @dp.message_handler(Text(equals='Профиль'))
