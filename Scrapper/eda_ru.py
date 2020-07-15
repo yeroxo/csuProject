@@ -55,7 +55,7 @@ class ParserEdaRu(Parser):
             if i.find('span') is None:
                 pass
             else:
-                str_ingrid.append(i.find('span').get_text(strip=True))
+                str_ingrid.append(i.find('span').get_text(strip=True).lower())
         return str_ingrid
 
     def get_categories(self, item):

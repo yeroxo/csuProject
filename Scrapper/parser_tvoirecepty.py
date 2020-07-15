@@ -61,7 +61,7 @@ class ParserTvoirecepty(Parser):
         info = info.find_all('div', class_='ingredient col-xs-12 nopadding margin-bottom-10 collapsed')
         for i in info:
             ingredient = i.find('div', class_='name pull-left').text
-            ingredients.append(ingredient.strip())
+            ingredients.append(ingredient.strip().lower())
         return ingredients
 
     def get_categories(self, item):
