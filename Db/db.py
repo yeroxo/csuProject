@@ -51,18 +51,18 @@ class SqliteRecipes:
 
     def add_product(self, product):
         args = (product,)
-        self.execute_query_with_value(self.insert_new_product, args)
+        self.execute_query_with_value("""insert into products(pr_name) values(?);""", args)
         self.connection.commit()
 
     def add_category(self, category):
         args = (category,)
-        self.execute_query_with_value(self.insert_new_category, args)
+        self.execute_query_with_value("""insert into categories(c_name) values(?);""", args)
         self.connection.commit()
 
     def add_user(self, user_id, user_login):
         args = (user_id,)
         cursor = self.connection.cursor()
-        cursor.execute(self.find_exist_user, args)
+        cursor.execute("""select * from users where user_id = ?;""", args)
         row = cursor.fetchone()
         if row is None:
             self.connection.execute(self.insert_new_user, (user_id,user_login))
@@ -89,11 +89,11 @@ class SqliteRecipes:
         self.execute_query(self.find_recept_id)
         r_id = int(str(self.cursor.fetchone())[1:-2])
         for i in ingr_list:
-            self.cursor.execute(self.find_exist_products, (i,))
+            self.cursor.execute("""select pr_id from products where pr_name = ?;""", (i,))
             row = self.cursor.fetchone()
             if row is None:
                 self.add_product(i)
-            self.execute_query_with_value(self.find_ing_id, (i,))
+            self.execute_query_with_value("""select pr_id from products where pr_name = ?;""", (i,))
             ing_id = int(str(self.cursor.fetchone())[1:-2])
             args = (r_id, ing_id)
             self.execute_query_with_value(self.insert_ingredient_to_recipe, args)
@@ -102,11 +102,11 @@ class SqliteRecipes:
         self.execute_query(self.find_recept_id)
         r_id = int(str(self.cursor.fetchone())[1:-2])
         for c in ceteg_list:
-            self.cursor.execute(self.find_exist_category, (c,))
+            self.cursor.execute("""select * from categories where c_name = ?;""", (c,))
             row = self.cursor.fetchone()
             if row is None:
                 self.add_category(c)
-            self.execute_query_with_value(self.find_categ_id, (c,))
+            self.execute_query_with_value("""select c_id from categories where c_name = ?;""", (c,))
             categ_id = int(str(self.cursor.fetchone())[1:-2])
             args = (str(r_id), str(categ_id))
             self.execute_query_with_value(self.insert_categoty_to_recipe, args)
@@ -336,21 +336,9 @@ class SqliteRecipes:
        );
        """
 
-    insert_new_product = """
-    insert into products(pr_name) values(?);
-    """
-
-    insert_new_category = """
-       insert into categories(c_name) values(?);
-       """
-
     insert_new_user = """
        insert into users(user_id, user_login, user_admin, date_of_adding) values(?, ?, FALSE, date('now'));
        """
-
-    delete_user = """
-        delete from users where user_id = ?
-    """
 
     insert_new_recipe = """
     insert into recipes(rec_name, rec_image, recipe, rec_link, rec_calories, rec_time) 
@@ -367,28 +355,8 @@ class SqliteRecipes:
     values(?,?);
     """
 
-    find_exist_products = """
-    select pr_id from products where pr_name = ?;
-    """
-
-    find_exist_category = """
-    select * from categories where c_name = ?;
-    """
-
-    find_exist_user = """
-    select * from users where user_id = ?;
-    """
-
     find_recept_id = """
     select max(rec_id) from recipes;
-    """
-
-    find_ing_id = """
-    select pr_id from products where pr_name = ?;
-    """
-
-    find_categ_id = """
-    select c_id from categories where c_name = ?;
     """
 
     find_rec_filter = """
