@@ -59,13 +59,13 @@ class SqliteRecipes:
         self.execute_query_with_value(self.insert_new_category, args)
         self.connection.commit()
 
-    def add_user(self, user):
-        args = (user,)
+    def add_user(self, user_id, user_login):
+        args = (user_id,)
         cursor = self.connection.cursor()
         cursor.execute(self.find_exist_user, args)
         row = cursor.fetchone()
         if row is None:
-            self.execute_query_with_value(self.insert_new_user, args)
+            self.connection.execute(self.insert_new_user, (user_id,user_login))
             self.connection.commit()
 
     def add_recipe(self, recipe):
@@ -141,6 +141,7 @@ class SqliteRecipes:
 
         if ingr_diff_num!=-1:
             final_result = self.find_recipe_without_diff(ingr_diff_num, len(ing_res),final_result)
+        print(final_result)
         return final_result
 
     """
@@ -300,6 +301,7 @@ class SqliteRecipes:
     create_users_table = """
        CREATE TABLE IF NOT EXISTS users (
          user_id TEXT PRIMARY KEY,
+         user_login TEXT NOT NULL,
          user_admin BOOLEAN NOT NULL,
          date_of_adding DATE NOT NULL
        );
@@ -343,7 +345,7 @@ class SqliteRecipes:
        """
 
     insert_new_user = """
-       insert into users(user_id, user_admin, date_of_adding) values(?, FALSE, date('now'));
+       insert into users(user_id, user_login, user_admin, date_of_adding) values(?, ?, FALSE, date('now'));
        """
 
     delete_user = """
@@ -411,19 +413,3 @@ if __name__ == '__main__':
                                'http:\\eda.ru', 'тяп-ляп и готово', '700', '31 час',
                                ['десерты', 'торты', 'день рождения'])
 
-#db.add_recipe(rec)
-# db.add_recipe(rec2)
-# db.add_recipe(rec4)
-# db.add_user('14g9ok8')
-# db.add_user('668ud9')
-# db.bot_make_user_admin('14g9ok8')
-# db.bot_delete_favourite('668ud9', 2)
-# db.bot_add_favourite('668ud9', 1)
-# print(db.date_now())
-# db.bot_find_recipes('668ud9', 'яйца, мука','масленица')
-# db.download_image('https://eda.ru/img/eda/c620x415i/s2.eda.ru/StaticContent/Photos/120213175531/180415114517/p_O.jpg', r'тут путь сохранения')
-# db.bot_select_by_category(['завтрак', 'на сковороде'])
-# db.bot_select_by_ingredients(['мука','яйца','шоколад'])
-#db.bot_find_recipes('668ud9', 'мука, яйца', 'завтрак')
-#db.bot_find_recipes('668ud9','мука, яйца',None)
-# db.bot_find_recipes('668ud9',None,'день рождения')
