@@ -215,18 +215,42 @@ class SqliteRecipes:
         return result
 
     def make_recipe_object(self, rec_id):
-        name = self.cursor.execute("""select rec_name from recipes where rec_id = ?;""", (rec_id,)).fetchone()
+        name = str(self.cursor.execute(
+            """select rec_name from recipes where rec_id = ?;""",
+            (rec_id,)).fetchone())[1:-2]
         # нужно как-то раскодировать изображение
-        image = self.cursor.execute("""select rec_image from recipes where rec_id = ?;""", (rec_id,)).fetchone()
-        ingredients = self.cursor.execute("""select pr_name from products p 
-         join ingredients i on i.pr_id=p.pr_id and i.rec_id = ?;""", (rec_id,)).fetchall()
-        link = self.cursor.execute("""select rec_link from recipes where rec_id = ?;""", (rec_id,)).fetchone()
-        description = self.cursor.execute("""select recipe from recipes where rec_id = ?;""", (rec_id,)).fetchone()
-        calories = self.cursor.execute("""select rec_calories from recipes where rec_id = ?;""", (rec_id,)).fetchone()
-        time_cooking = self.cursor.execute("""select rec_time from recipes where rec_id = ?;""", (rec_id,)).fetchone()
-        categories = self.cursor.execute("""select c_name from categories c
-         join categories_of_recipes i on i.c_id=c.c_id and i.rec_id = ?;""", (rec_id,)).fetchall
-        return model.recipe.Recipe(name, image, ingredients, link, description, calories, time_cooking, categories)
+        image = str(self.cursor.execute(
+            """select rec_image from recipes where rec_id = ?;""",
+            (rec_id,)).fetchone())[1:-2]
+        ingredients = self.cursor.execute(
+            """select pr_name from products p 
+         join ingredients i on i.pr_id=p.pr_id 
+         and i.rec_id = ?;""", (rec_id,)).fetchall()
+        ingr = []
+        for i in ingredients:
+             i = str(i)[2:-3]
+             ingr.append(i)
+        link = str(self.cursor.execute(
+            """select rec_link from recipes where rec_id = ?;""",
+            (rec_id,)).fetchone())[1:-2]
+        description = str(self.cursor.execute(
+            """select recipe from recipes where rec_id = ?;""",
+            (rec_id,)).fetchone())[1:-2]
+        calories = str(self.cursor.execute(
+            """select rec_calories from recipes where rec_id = ?;""",
+            (rec_id,)).fetchone())[1:-2]
+        time_cooking = str(self.cursor.execute(
+            """select rec_time from recipes where rec_id = ?;""",
+            (rec_id,)).fetchone())[1:-2]
+        categories = self.cursor.execute(
+            """select c_name from categories c
+         join categories_of_recipes i on i.c_id=c.c_id 
+         and i.rec_id = ?;""", (rec_id,)).fetchall()
+        categ = []
+        for i in categories:
+             i = str(i)[2:-3]
+             categ.append(i)
+        return model.recipe.Recipe(name, image, ingr, link, description, calories, time_cooking, categ)
 
     def bot_show_hisrory(self, user_id):
         self.execute_query_with_value("""select * from history where user_id like ?""", (user_id,))
