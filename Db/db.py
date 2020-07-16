@@ -5,6 +5,7 @@ import model.recipe
 from urllib.request import urlretrieve
 import urllib
 import sys
+import model.recipe
 
 
 class SqliteRecipes:
@@ -65,7 +66,7 @@ class SqliteRecipes:
         cursor.execute("""select * from users where user_id = ?;""", args)
         row = cursor.fetchone()
         if row is None:
-            self.connection.execute(self.insert_new_user, (user_id,user_login))
+            self.connection.execute(self.insert_new_user, (user_id, user_login))
             self.connection.commit()
 
     def add_recipe(self, recipe):
@@ -139,8 +140,8 @@ class SqliteRecipes:
         else:
             return filt_res
 
-        if ingr_diff_num!=-1:
-            final_result = self.find_recipe_without_diff(ingr_diff_num, len(ing_res),final_result)
+        if ingr_diff_num != -1:
+            final_result = self.find_recipe_without_diff(ingr_diff_num, len(ing_res), final_result)
         print(final_result)
         return final_result
 
@@ -157,7 +158,7 @@ class SqliteRecipes:
             self.execute_query_with_value("""select count(pr_id) from ingredients 
                                                                 where rec_id = ?;""", (rec,))
             rec_ingr = self.cursor.fetchone()
-            if rec_ingr-ingr_num>diff_num:
+            if rec_ingr - ingr_num > diff_num:
                 result.append(rec)
         return result
 
@@ -198,6 +199,34 @@ class SqliteRecipes:
             i = i[0]
             final_result.insert(0, i)
         return final_result
+
+    def bot_find_recipes_by_ingredients(self, ingr_list):
+        recipes = self.bot_select_by_ingredients(ingr_list)
+        result = []
+        for r in recipes:
+            result.append(self.make_recipe_object(r))
+        return result
+
+    def bot_find_recipes_by_categories(self, categ_list):
+        recipes = self.bot_select_by_category(categ_list)
+        result = []
+        for r in recipes:
+            result.append(self.make_recipe_object(r))
+        return result
+
+    def make_recipe_object(self, rec_id):
+        name = self.cursor.execute("""select rec_name from recipes where rec_id = ?;""", (rec_id,)).fetchone()
+        # нужно как-то раскодировать изображение
+        image = self.cursor.execute("""select rec_image from recipes where rec_id = ?;""", (rec_id,)).fetchone()
+        ingredients = self.cursor.execute("""select pr_name from products p 
+         join ingredients i on i.pr_id=p.pr_id and i.rec_id = ?;""", (rec_id,)).fetchall()
+        link = self.cursor.execute("""select rec_link from recipes where rec_id = ?;""", (rec_id,)).fetchone()
+        description = self.cursor.execute("""select recipe from recipes where rec_id = ?;""", (rec_id,)).fetchone()
+        calories = self.cursor.execute("""select rec_calories from recipes where rec_id = ?;""", (rec_id,)).fetchone()
+        time_cooking = self.cursor.execute("""select rec_time from recipes where rec_id = ?;""", (rec_id,)).fetchone()
+        categories = self.cursor.execute("""select c_name from categories c
+         join categories_of_recipes i on i.c_id=c.c_id and i.rec_id = ?;""", (rec_id,)).fetchall
+        return model.recipe.Recipe(name, image, ingredients, link, description, calories, time_cooking, categories)
 
     def bot_show_hisrory(self, user_id):
         self.execute_query_with_value("""select * from history where user_id like ?""", (user_id,))
@@ -380,4 +409,3 @@ if __name__ == '__main__':
                                ['яйца', 'мука', 'молоко', 'сахар', 'сгущеное молоко', 'орехи'],
                                'http:\\eda.ru', 'тяп-ляп и готово', '700', '31 час',
                                ['десерты', 'торты', 'день рождения'])
-
