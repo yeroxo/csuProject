@@ -139,7 +139,7 @@ inline_kb1 = InlineKeyboardMarkup().add(inline_btn_1)
 
 @dp.message_handler(Text(equals='Начать поиск'))
 async def get_search(msg: types.Message):
-    a = bd.bot_find_recipes(msg.from_user.id, -1, "мясо")
+    a = bd.bot_find_recipes(msg.from_user.id, -1, "молоко")
 
     await msg.answer(a, reply_markup=hzchto)
 
