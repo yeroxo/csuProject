@@ -153,7 +153,7 @@ class SqliteRecipes:
             self.execute_query_with_value("""select count(pr_id) from ingredients 
                                                                 where rec_id = ?;""", (rec,))
             rec_ingr = self.cursor.fetchone()
-            if rec_ingr-ingr_num>diff_num:
+            if rec_ingr[0]-ingr_num>diff_num:
                 result.append(rec)
         return result
 
