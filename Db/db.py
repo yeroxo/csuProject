@@ -5,6 +5,7 @@ import model.recipe
 from urllib.request import urlretrieve
 import urllib
 import sys
+import model.recipe
 
 
 class SqliteRecipes:
@@ -51,21 +52,21 @@ class SqliteRecipes:
 
     def add_product(self, product):
         args = (product,)
-        self.execute_query_with_value(self.insert_new_product, args)
+        self.execute_query_with_value("""insert into products(pr_name) values(?);""", args)
         self.connection.commit()
 
     def add_category(self, category):
         args = (category,)
-        self.execute_query_with_value(self.insert_new_category, args)
+        self.execute_query_with_value("""insert into categories(c_name) values(?);""", args)
         self.connection.commit()
 
-    def add_user(self, user):
-        args = (user,)
+    def add_user(self, user_id, user_login):
+        args = (user_id,)
         cursor = self.connection.cursor()
-        cursor.execute(self.find_exist_user, args)
+        cursor.execute("""select * from users where user_id = ?;""", args)
         row = cursor.fetchone()
         if row is None:
-            self.execute_query_with_value(self.insert_new_user, args)
+            self.connection.execute(self.insert_new_user, (user_id, user_login))
             self.connection.commit()
 
     def add_recipe(self, recipe):
@@ -86,11 +87,11 @@ class SqliteRecipes:
         self.execute_query(self.find_recept_id)
         r_id = int(str(self.cursor.fetchone())[1:-2])
         for i in ingr_list:
-            self.cursor.execute(self.find_exist_products, (i,))
+            self.cursor.execute("""select pr_id from products where pr_name = ?;""", (i,))
             row = self.cursor.fetchone()
             if row is None:
                 self.add_product(i)
-            self.execute_query_with_value(self.find_ing_id, (i,))
+            self.execute_query_with_value("""select pr_id from products where pr_name = ?;""", (i,))
             ing_id = int(str(self.cursor.fetchone())[1:-2])
             args = (r_id, ing_id)
             self.execute_query_with_value(self.insert_ingredient_to_recipe, args)
@@ -99,11 +100,11 @@ class SqliteRecipes:
         self.execute_query(self.find_recept_id)
         r_id = int(str(self.cursor.fetchone())[1:-2])
         for c in ceteg_list:
-            self.cursor.execute(self.find_exist_category, (c,))
+            self.cursor.execute("""select * from categories where c_name = ?;""", (c,))
             row = self.cursor.fetchone()
             if row is None:
                 self.add_category(c)
-            self.execute_query_with_value(self.find_categ_id, (c,))
+            self.execute_query_with_value("""select c_id from categories where c_name = ?;""", (c,))
             categ_id = int(str(self.cursor.fetchone())[1:-2])
             args = (str(r_id), str(categ_id))
             self.execute_query_with_value(self.insert_categoty_to_recipe, args)
@@ -136,8 +137,9 @@ class SqliteRecipes:
         else:
             return filt_res
 
-        if ingr_diff_num!=-1:
-            final_result = self.find_recipe_without_diff(ingr_diff_num, len(ing_res),final_result)
+        if ingr_diff_num != -1:
+            final_result = self.find_recipe_without_diff(ingr_diff_num, len(ing_res), final_result)
+        print(final_result)
         return final_result
 
     """
@@ -194,6 +196,58 @@ class SqliteRecipes:
             i = i[0]
             final_result.insert(0, i)
         return final_result
+
+    def bot_find_recipes_by_ingredients(self, ingr_list):
+        recipes = self.bot_select_by_ingredients(ingr_list)
+        result = []
+        for r in recipes:
+            result.append(self.make_recipe_object(r))
+        return result
+
+    def bot_find_recipes_by_categories(self, categ_list):
+        recipes = self.bot_select_by_category(categ_list)
+        result = []
+        for r in recipes:
+            result.append(self.make_recipe_object(r))
+        return result
+
+    def make_recipe_object(self, rec_id):
+        name = str(self.cursor.execute(
+            """select rec_name from recipes where rec_id = ?;""",
+            (rec_id,)).fetchone())[1:-2]
+        # нужно как-то раскодировать изображение
+        image = str(self.cursor.execute(
+            """select rec_image from recipes where rec_id = ?;""",
+            (rec_id,)).fetchone())[1:-2]
+        ingredients = self.cursor.execute(
+            """select pr_name from products p 
+         join ingredients i on i.pr_id=p.pr_id 
+         and i.rec_id = ?;""", (rec_id,)).fetchall()
+        ingr = []
+        for i in ingredients:
+             i = str(i)[2:-3]
+             ingr.append(i)
+        link = str(self.cursor.execute(
+            """select rec_link from recipes where rec_id = ?;""",
+            (rec_id,)).fetchone())[1:-2]
+        description = str(self.cursor.execute(
+            """select recipe from recipes where rec_id = ?;""",
+            (rec_id,)).fetchone())[1:-2]
+        calories = str(self.cursor.execute(
+            """select rec_calories from recipes where rec_id = ?;""",
+            (rec_id,)).fetchone())[1:-2]
+        time_cooking = str(self.cursor.execute(
+            """select rec_time from recipes where rec_id = ?;""",
+            (rec_id,)).fetchone())[1:-2]
+        categories = self.cursor.execute(
+            """select c_name from categories c
+         join categories_of_recipes i on i.c_id=c.c_id 
+         and i.rec_id = ?;""", (rec_id,)).fetchall()
+        categ = []
+        for i in categories:
+             i = str(i)[2:-3]
+             categ.append(i)
+        return model.recipe.Recipe(name, image, ingr, link, description, calories, time_cooking, categ)
 
     def bot_show_hisrory(self, user_id):
         self.execute_query_with_value("""select * from history where user_id like ?""", (user_id,))
@@ -297,6 +351,7 @@ class SqliteRecipes:
     create_users_table = """
        CREATE TABLE IF NOT EXISTS users (
          user_id TEXT PRIMARY KEY,
+         user_login TEXT NOT NULL,
          user_admin BOOLEAN NOT NULL,
          date_of_adding DATE NOT NULL
        );
@@ -331,21 +386,9 @@ class SqliteRecipes:
        );
        """
 
-    insert_new_product = """
-    insert into products(pr_name) values(?);
-    """
-
-    insert_new_category = """
-       insert into categories(c_name) values(?);
-       """
-
     insert_new_user = """
-       insert into users(user_id, user_admin, date_of_adding) values(?, FALSE, date('now'));
+       insert into users(user_id, user_login, user_admin, date_of_adding) values(?, ?, FALSE, date('now'));
        """
-
-    delete_user = """
-        delete from users where user_id = ?
-    """
 
     insert_new_recipe = """
     insert into recipes(rec_name, rec_image, recipe, rec_link, rec_calories, rec_time) 
@@ -362,28 +405,8 @@ class SqliteRecipes:
     values(?,?);
     """
 
-    find_exist_products = """
-    select pr_id from products where pr_name = ?;
-    """
-
-    find_exist_category = """
-    select * from categories where c_name = ?;
-    """
-
-    find_exist_user = """
-    select * from users where user_id = ?;
-    """
-
     find_recept_id = """
     select max(rec_id) from recipes;
-    """
-
-    find_ing_id = """
-    select pr_id from products where pr_name = ?;
-    """
-
-    find_categ_id = """
-    select c_id from categories where c_name = ?;
     """
 
     find_rec_filter = """
@@ -407,20 +430,3 @@ if __name__ == '__main__':
                                ['яйца', 'мука', 'молоко', 'сахар', 'сгущеное молоко', 'орехи'],
                                'http:\\eda.ru', 'тяп-ляп и готово', '700', '31 час',
                                ['десерты', 'торты', 'день рождения'])
-
-#db.add_recipe(rec)
-# db.add_recipe(rec2)
-# db.add_recipe(rec4)
-# db.add_user('14g9ok8')
-# db.add_user('668ud9')
-# db.bot_make_user_admin('14g9ok8')
-# db.bot_delete_favourite('668ud9', 2)
-# db.bot_add_favourite('668ud9', 1)
-# print(db.date_now())
-# db.bot_find_recipes('668ud9', 'яйца, мука','масленица')
-# db.download_image('https://eda.ru/img/eda/c620x415i/s2.eda.ru/StaticContent/Photos/120213175531/180415114517/p_O.jpg', r'тут путь сохранения')
-# db.bot_select_by_category(['завтрак', 'на сковороде'])
-# db.bot_select_by_ingredients(['мука','яйца','шоколад'])
-#db.bot_find_recipes('668ud9', 'мука, яйца', 'завтрак')
-#db.bot_find_recipes('668ud9','мука, яйца',None)
-# db.bot_find_recipes('668ud9',None,'день рождения')
