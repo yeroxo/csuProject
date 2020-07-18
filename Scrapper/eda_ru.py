@@ -105,10 +105,6 @@ class ParserEdaRu(Parser):
         self.download_image(link, path)
         return path
 
-    def download_image(self, img_url, path):
-        urllib.parse.quote(':')
-        return urlretrieve(img_url, path)
-
     def parse(self, list):
         db = SqliteRecipes()
         for l in list:

@@ -6,7 +6,6 @@ import urllib
 from Scrapper.abstract_classes import *
 
 
-
 class CrawlerTvoirecepty(Crawler):
     def __init__(self):
         self.links = []
@@ -36,11 +35,29 @@ class CrawlerTvoirecepty(Crawler):
     def __str__(self):
         return self.url
 
+
 session = req.session()
 html = session.get('https://tvoirecepty.ru/recept/tsimes').text
 soup = BeautifulSoup(html, 'lxml')
-a = ['https://tvoirecepty.ru/recept/kurinoe-file-v-klyare', 'https://tvoirecepty.ru/recept/tsimes', 'https://tvoirecepty.ru/recept/pyure-iz-chechevitsy', 'https://tvoirecepty.ru/recept/bananovyi-rulet', 'https://tvoirecepty.ru/recept/kartofel-zharenyi-v-multivarke', 'https://tvoirecepty.ru/recept/zharkoe-s-kuritsei-v-multivarke', 'https://tvoirecepty.ru/recept/salat-s-risom-i-konservoi', 'https://tvoirecepty.ru/recept/krestyanskii-sup', 'https://tvoirecepty.ru/recept/pasta-s-kuritsei-i-zelenym-goroshkom-0', 'https://tvoirecepty.ru/recept/kartofel-v-multivarke', 'https://tvoirecepty.ru/recept/salat-iz-pekinki-0', 'https://tvoirecepty.ru/recept/morkov-s-syrom', 'https://tvoirecepty.ru/recept/biskvitnoe-pechene', 'https://tvoirecepty.ru/recept/voda-sassi']
-b =  ['https://tvoirecepty.ru/recept/kurinoe-file-v-klyare', 'https://tvoirecepty.ru/recept/tsimes', 'https://tvoirecepty.ru/recept/pyure-iz-chechevitsy', 'https://tvoirecepty.ru/recept/bananovyi-rulet', 'https://tvoirecepty.ru/recept/kartofel-zharenyi-v-multivarke', 'https://tvoirecepty.ru/recept/zharkoe-s-kuritsei-v-multivarke', 'https://tvoirecepty.ru/recept/salat-s-risom-i-konservoi', 'https://tvoirecepty.ru/recept/krestyanskii-sup', 'https://tvoirecepty.ru/recept/pasta-s-kuritsei-i-zelenym-goroshkom-0', 'https://tvoirecepty.ru/recept/kartofel-v-multivarke', 'https://tvoirecepty.ru/recept/salat-iz-pekinki-0', 'https://tvoirecepty.ru/recept/morkov-s-syrom', 'https://tvoirecepty.ru/recept/biskvitnoe-pechene', 'https://tvoirecepty.ru/recept/voda-sassi']
+a = ['https://tvoirecepty.ru/recept/kurinoe-file-v-klyare', 'https://tvoirecepty.ru/recept/tsimes',
+     'https://tvoirecepty.ru/recept/pyure-iz-chechevitsy', 'https://tvoirecepty.ru/recept/bananovyi-rulet',
+     'https://tvoirecepty.ru/recept/kartofel-zharenyi-v-multivarke',
+     'https://tvoirecepty.ru/recept/zharkoe-s-kuritsei-v-multivarke',
+     'https://tvoirecepty.ru/recept/salat-s-risom-i-konservoi', 'https://tvoirecepty.ru/recept/krestyanskii-sup',
+     'https://tvoirecepty.ru/recept/pasta-s-kuritsei-i-zelenym-goroshkom-0',
+     'https://tvoirecepty.ru/recept/kartofel-v-multivarke', 'https://tvoirecepty.ru/recept/salat-iz-pekinki-0',
+     'https://tvoirecepty.ru/recept/morkov-s-syrom', 'https://tvoirecepty.ru/recept/biskvitnoe-pechene',
+     'https://tvoirecepty.ru/recept/voda-sassi']
+b = ['https://tvoirecepty.ru/recept/kurinoe-file-v-klyare', 'https://tvoirecepty.ru/recept/tsimes',
+     'https://tvoirecepty.ru/recept/pyure-iz-chechevitsy', 'https://tvoirecepty.ru/recept/bananovyi-rulet',
+     'https://tvoirecepty.ru/recept/kartofel-zharenyi-v-multivarke',
+     'https://tvoirecepty.ru/recept/zharkoe-s-kuritsei-v-multivarke',
+     'https://tvoirecepty.ru/recept/salat-s-risom-i-konservoi', 'https://tvoirecepty.ru/recept/krestyanskii-sup',
+     'https://tvoirecepty.ru/recept/pasta-s-kuritsei-i-zelenym-goroshkom-0',
+     'https://tvoirecepty.ru/recept/kartofel-v-multivarke', 'https://tvoirecepty.ru/recept/salat-iz-pekinki-0',
+     'https://tvoirecepty.ru/recept/morkov-s-syrom', 'https://tvoirecepty.ru/recept/biskvitnoe-pechene',
+     'https://tvoirecepty.ru/recept/voda-sassi']
+
 
 class ParserTvoirecepty(Parser):
 
@@ -88,7 +105,7 @@ class ParserTvoirecepty(Parser):
         soup = BeautifulSoup(html, 'lxml')
         recipe = {
             'name': soup.find('div', class_='title-line container').find('h1', class_='pull-left fn').text,
-            'image':  self.get_image(soup),
+            'image': self.get_image(soup),
             'ingredients': self.get_ingredients(soup),
             'link': url,
             'description': self.get_steps(soup),
@@ -101,7 +118,6 @@ class ParserTvoirecepty(Parser):
         print(recipe)
         return recipe_rec
 
-
     def get_image(self, soup):
         link = soup.find('div', class_='crop-xs col-xs-12 nopadding').find('img').get('src')
         elements = link.split('/')
@@ -110,30 +126,10 @@ class ParserTvoirecepty(Parser):
         self.download_image(link, path)
         return path
 
-    def download_image(self, img_url, path):
-        print(img_url)
-        print(path)
-        urllib.parse.quote(':')
-        return urlretrieve(img_url, path)
-
-
-
-#c = CrawlerTvoirecepty()
-#print(c.url)
-#c = set(c)
-#print(len(c))
-#print(c)
-#p = ParserTvoirecepty()
-#p.parse(['https://tvoirecepty.ru/recept/bulochki-s-dzhemom'])
-
-
-
-
-
-
-
-
-
-
-
-
+# c = CrawlerTvoirecepty()
+# print(c.url)
+# c = set(c)
+# print(len(c))
+# print(c)
+# p = ParserTvoirecepty()
+# p.parse(['https://tvoirecepty.ru/recept/bulochki-s-dzhemom'])

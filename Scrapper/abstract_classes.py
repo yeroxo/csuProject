@@ -1,4 +1,6 @@
+import urllib
 from abc import ABC, abstractmethod, abstractproperty
+from urllib.request import urlretrieve
 
 
 class Crawler(ABC):
@@ -44,4 +46,5 @@ class Parser(ABC):
 
     @abstractmethod
     def download_image(self, img_url, path):
-        pass
+        urllib.parse.quote(':')
+        return urlretrieve(img_url, path)

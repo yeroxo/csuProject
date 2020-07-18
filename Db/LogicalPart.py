@@ -179,14 +179,13 @@ class LogicalPart:
         self.db.connection.execute("""SELECT date('now');""")
         return str(self.db.cursor.fetchone())[1:-2]
 
-    def bot_make_user_admin(self, user_id):
-        self.db.cursor.execute("""UPDATE users SET user_admin = TRUE WHERE user_id like ? """, (user_id,))
+    def bot_make_user_admin(self, user_login):
+        self.db.cursor.execute("""UPDATE users SET user_admin = TRUE WHERE user_login like ? """, (user_login,))
 
-    def bot_delete_user_admin(self, user_id):
-        self.db.cursor.execute("""UPDATE users SET user_admin = FALSE WHERE user_id like ? """, (user_id,))
+    def bot_delete_user_admin(self, user_login):
+        self.db.cursor.execute("""UPDATE users SET user_admin = FALSE WHERE user_login like ? """, (user_login,))
 
-
-lg = LogicalPart()
-lg.bot_find_recipes_by_categories('завтрак')
-lg.bot_find_recipes_by_name('Торт')
-lg.sql_find_with_ingredients('мука')
+# lg = LogicalPart()
+# lg.bot_find_recipes_by_categories('завтрак')
+# lg.bot_find_recipes_by_name('Торт')
+# lg.sql_find_with_ingredients('мука')

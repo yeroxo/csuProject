@@ -6,7 +6,7 @@ from aiogram.utils import callback_data
 
 from Bot import config
 from aiogram import Bot, Dispatcher, executor, types
-from Db.db import SqliteRecipes as DataBase
+from Db.LogicalPart import LogicalPart as DataBase
 
 # задаем уровень логов
 logging.basicConfig(level=logging.INFO)
@@ -79,17 +79,18 @@ profile_menu = types.ReplyKeyboardMarkup(
 hzchto = InlineKeyboardMarkup(
     inline_keyboard=[
         [
-            InlineKeyboardButton(text='ku',callback_data="button1")
+            InlineKeyboardButton(text='ku', callback_data="button1")
         ]
     ],
 )
+
 
 #            types.KeyboardButton(text='Избранное'),
 #            types.KeyboardButton(text='История поисков'),
 # клава
 
 @dp.message_handler(Command("start"))
-async def show_menu(message: types.Message):
+async def start_bot(message: types.Message):
     await message.answer(f"Приветствуем в нашем боте {message.from_user.first_name}\nМы поможем тебе найти рецептики",
                          reply_markup=main_menu)
     bd.add_user(message.from_user.id)
@@ -126,7 +127,8 @@ async def get_food(message: types.Message):
 async def get_food(message: types.Message):
     await message.answer(f"Вы вернулись", reply_markup=main_menu)
 
-#пример для будущего перелистывания страниц
+
+# пример для будущего перелистывания страниц
 @dp.callback_query_handler(lambda callback_query: True)
 async def process_callback_handler(callback_query: types.CallbackQuery):
     if callback_query.data == 'button1':
@@ -140,7 +142,6 @@ inline_kb1 = InlineKeyboardMarkup().add(inline_btn_1)
 @dp.message_handler(Text(equals='Начать поиск'))
 async def get_search(msg: types.Message):
     a = bd.bot_find_recipes(msg.from_user.id, -1, "молоко")
-
     await msg.answer(a, reply_markup=hzchto)
 
 
