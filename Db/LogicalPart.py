@@ -152,7 +152,7 @@ class LogicalPart:
         for i in categories:
             i = str(i)[2:-3]
             categ.append(i)
-        return model.recipe.Recipe(name, image, ingr, link, description, calories, time_cooking, categ)
+        return model.recipe.Recipe(rec_id, name, image, ingr, link, description, calories, time_cooking, categ)
 
     def bot_get_history(self, user_id):
         self.db.cursor.execute("""select * from history where user_id like ?""", (user_id,))

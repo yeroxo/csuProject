@@ -1,5 +1,6 @@
 class Recipe:
     def __init__(self):
+        self.id = None
         self.name = None
         self.image = None
         self.ingredients = None
@@ -10,6 +11,18 @@ class Recipe:
         self.categories = None
 
     def __init__(self, name, image, ingredients, link, description, calories, time, categories):
+        self.id = None
+        self.name = name
+        self.image = image
+        self.ingredients = ingredients
+        self.link = link
+        self.description = description
+        self.calories = calories
+        self.time_cooking = time
+        self.categories = categories
+
+    def __init__(self, id, name, image, ingredients, link, description, calories, time, categories):
+        self.id = id
         self.name = name
         self.image = image
         self.ingredients = ingredients
