@@ -18,7 +18,7 @@ class LogicalPart:
             ing_list = str_ing.split(', ')
             ing_res = self.select_by_ingredients(ing_list)
 
-        self.add_to_history(user_id, str_ing, str_filt)
+        self.add_to_history(user_id, None, str_ing, str_filt)
         self.db.connection.commit()
         if str_ing is not None and str_filt is not None:
             result = list((Counter(ing_res) & Counter(filt_res)).elements())
@@ -53,12 +53,13 @@ class LogicalPart:
                 result.append(rec)
         return result
 
-    def bot_find_recipes_by_name(self, str_name):
+    def bot_find_recipes_by_name(self, user_id, str_name):
         recipes = self.db.cursor.execute("""select * from recipes 
                                                    where rec_name like ?""", (str_name,))
         result = []
         for r in recipes:
             result.append(self.make_recipe_object(r))
+        self.add_to_history(user_id, str_name, None, None)
         return result
 
     def bot_find_recipes_by_ingredients(self, user_id, str_ing, ingr_diff_num):
@@ -69,7 +70,7 @@ class LogicalPart:
             result.append(self.make_recipe_object(r))
         if(ingr_diff_num!=-1):
             result = self.find_recipe_without_diff(ingr_diff_num, len(ing_list), result)
-        self.add_to_history(user_id, str_ing, None)
+        self.add_to_history(user_id, None, str_ing, None)
         return result
 
     def bot_find_recipes_by_categories(self, user_id, str_categ):
@@ -79,7 +80,7 @@ class LogicalPart:
         for r in recipes:
             result.append(self.make_recipe_object(r))
             print(r)
-        self.add_to_history(user_id, None, str_categ)
+        self.add_to_history(user_id, None, None, str_categ)
         return result
 
     def sql_find_with_categories(self, elem):
@@ -203,9 +204,9 @@ class LogicalPart:
             s_date = str(self.db.cursor.fetchone())[1:-2]
         return res
 
-    def add_to_history(self, user_id, products, categories):
-        self.db.cursor.execute("""insert into history (user_id, products, categories, date_of_adding) 
-           values(?,?,?,?);""", (user_id, products, categories, self.date_now()))
+    def add_to_history(self, user_id, name, products, categories):
+        self.db.cursor.execute("""insert into history (user_id, name, products, categories, date_of_adding) 
+           values(?,?,?,?);""", (user_id, name, products, categories, self.date_now()))
 
     def bot_get_categories(self):
         self.db.cursor.execute("""select * from categories;""")
