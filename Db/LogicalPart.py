@@ -152,6 +152,28 @@ class LogicalPart:
     def bot_get_history(self, user_id):
         self.db.cursor.execute("""select * from history where user_id like ?""", (user_id,))
 
+    def bot_get_new_users_week(self):
+        s_date = self.date_now()
+        res = []
+        for i in range(7):
+            self.db.cursor.execute("""select count(user_id) from users where date_of_adding = date(?)""", (s_date,))
+            count = str(self.db.cursor.fetchone())[1:-2]
+            res.append(count)
+            self.db.cursor.execute("""select date(?,'-1 days');""",(s_date,))
+            s_date = str(self.db.cursor.fetchone())[1:-2]
+        return res
+
+    def bot_get_new_users_month(self):
+        s_date = self.date_now()
+        res = []
+        for i in range(30):
+            self.db.cursor.execute("""select count(user_id) from users where date_of_adding = date(?)""", (s_date,))
+            count = str(self.db.cursor.fetchone())[1:-2]
+            res.append(count)
+            self.db.cursor.execute("""select date(?,'-1 days');""", (s_date,))
+            s_date = str(self.db.cursor.fetchone())[1:-2]
+        return res
+
     def add_to_history(self, user_id, products, categories):
         self.db.cursor.execute("""insert into history (user_id, products, categories, date_of_adding) 
            values(?,?,?,?);""", (user_id, products, categories, self.date_now()))
@@ -176,8 +198,10 @@ class LogicalPart:
                                          (user_id, rec_id))
 
     def date_now(self):
-        self.db.connection.execute("""SELECT date('now');""")
-        return str(self.db.cursor.fetchone())[1:-2]
+        self.db.execute_query("""SELECT date('now');""")
+        res = str(self.db.cursor.fetchone())[2:-3]
+        print(str(res))
+        return res
 
     def bot_make_user_admin(self, user_login):
         self.db.cursor.execute("""UPDATE users SET user_admin = TRUE WHERE user_login like ? """, (user_login,))
