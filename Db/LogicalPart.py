@@ -152,7 +152,7 @@ class LogicalPart:
         for i in categories:
             i = str(i)[2:-3]
             categ.append(i)
-        return model.recipe.Recipe(rec_id, name, image, ingr, link, description, calories, time_cooking, categ)
+        return model.recipe.Recipe(name, image, ingr, link, description, calories, time_cooking, categ, rec_id)
 
     def bot_get_history(self, user_id):
         self.db.cursor.execute("""select * from history where user_id like ?""", (user_id,))
@@ -212,6 +212,10 @@ class LogicalPart:
 
     def bot_get_favourites(self, user_id):
         self.db.cursor.execute("""select * from favourites where user_id like ?""", (user_id,))
+        result = self.db.cursor.fetchall()
+        if result:
+            return result
+        return None
 
     def bot_add_favourite(self, user_id, rec_id):
         self.db.cursor.execute("""select * from favourites where user_id like ? and rec_id = ?""",
@@ -221,6 +225,7 @@ class LogicalPart:
             self.db.cursor.execute(
                 """insert into favourites(rec_id, user_id, date_of_adding) values(?, ?, ?);""",
                 (rec_id, user_id, self.date_now()))
+            self.db.connection.commit()
 
     def bot_delete_favourite(self, user_id, rec_id):
         self.db.execute_query_with_value("""delete from favourites where user_id like ? and rec_id = ?""",

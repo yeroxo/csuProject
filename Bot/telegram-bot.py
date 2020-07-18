@@ -1,13 +1,17 @@
 import logging
+import urllib3
+from urllib.parse import quote
 
 from aiogram.dispatcher.filters import Command, Text
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.callback_data import CallbackData
 
-
 from Bot import config
 from aiogram import Bot, Dispatcher, executor, types
 from Db.LogicalPart import LogicalPart as DataBase
+
+from model.recipe import Recipe
+
 
 # задаем уровень логов
 logging.basicConfig(level=logging.INFO)
@@ -19,9 +23,8 @@ bd = DataBase()
 bot = Bot(token=config.API_TOKEN)
 dp = Dispatcher(bot)
 
-# local base
-local_bd = []
-current_page = 0
+recipe_cb = CallbackData('recipe', 'id', 'start_indx', 'action')
+menu_cb = CallbackData('menu_type', 'action')
 
 main_menu = types.ReplyKeyboardMarkup(
     keyboard=[
@@ -80,8 +83,6 @@ search_menu_categories = types.ReplyKeyboardMarkup(
     ],
     resize_keyboard=True
 )
-ss = types.InlineKeyboardButton("Первая кнопка", callback_data="button1")
-page_inline_buttons = types.InlineKeyboardMarkup().add(ss)
 
 profile_menu = types.ReplyKeyboardMarkup(
     keyboard=[
@@ -96,30 +97,82 @@ profile_menu = types.ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-hzchto = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [
-            InlineKeyboardButton(text='ku', callback_data="button1")
-        ]
-    ],
-)
+
+def get_reply_fmt(recipes, start_indx=0):
+    if isinstance(start_indx, str):
+        start_indx = int(start_indx)
+    if start_indx < 0:
+        start_indx = 0
+    markup = types.InlineKeyboardMarkup()
+    msg = ''
+    # markup_list = []  # для отображения в строку
+    for i, recipe in enumerate(recipes[start_indx:start_indx+10]):
+        msg += f'{i + 1}. {recipe.name}\n'
+        # markup_list.append(  # для отображения в строку
+        markup.add(
+            types.InlineKeyboardButton(
+                f'{i+1}',
+                callback_data=recipe_cb.new(id=recipe.id, start_indx=start_indx, action='view')),
+        )
+    # markup.row(*markup_list)  # для отображения в строку
+    if start_indx > 0:
+        markup.add(types.InlineKeyboardButton(
+                f'Previous page',
+                callback_data=recipe_cb.new(id='-', start_indx=start_indx-10, action='list')))
+    if start_indx+10 < len(recipes):
+        markup.add(types.InlineKeyboardButton(
+                f'Next page',
+                callback_data=recipe_cb.new(id='-', start_indx=start_indx+10, action='list')))
+    return {'markup': markup, 'msg': msg.replace("\'", "")}
 
 
-#            types.KeyboardButton(text='Избранное'),
-#            types.KeyboardButton(text='История поисков'),
-# клава
+def format_recipe(recipe_id: str, start_indx: str, recipe: Recipe, user_id) -> (str, types.InlineKeyboardMarkup):
+    text = f"ID: {recipe.id}\nTitle: {recipe.name}"
+    favourites = bd.bot_get_favourites(user_id)
+    is_favourite = False
+    if favourites:
+        for favourite in favourites:
+            if int(recipe.id) == favourite[0]:
+                is_favourite = True
+                break
+    markup = types.InlineKeyboardMarkup()
+    if is_favourite:
+        markup.add(
+            types.InlineKeyboardButton('★', callback_data=recipe_cb.new(id=recipe_id, start_indx=start_indx, action='unfavourite'))
+        )
+    else:
+        markup.add(
+            types.InlineKeyboardButton('☆', callback_data=recipe_cb.new(id=recipe_id, start_indx=start_indx, action='favourite'))
+        )
+    link = recipe.link
+    if 'https' in link:
+        link = link[9:]
+    elif 'http' in link:
+        link = link[8:]
+
+    markup.add(
+        types.InlineKeyboardButton('Открыть на сайте', url=link)
+    )
+    markup.add(types.InlineKeyboardButton('<< Back', callback_data=recipe_cb.new(id='-', start_indx=start_indx, action='list')))
+    return text, markup
+
 
 @dp.message_handler(Command("start"))
 async def start_bot(message: types.Message):
     bd.bot_add_user(message.from_user.id, message.from_user.username)
+
+    msg = f"Приветствуем в нашем боте {message.from_user.first_name}\nМы поможем тебе найти рецептики"
     if bd.bot_check_is_admin(message.from_user.id):
         await message.answer(
-            f"Приветствуем в нашем боте {message.from_user.first_name}\nМы поможем тебе найти рецептики",
-            reply_markup=main_menu_admin)
+            msg, reply_markup=main_menu_admin)
     else:
         await message.answer(
-            f"Приветствуем в нашем боте {message.from_user.first_name}\nМы поможем тебе найти рецептики",
-            reply_markup=main_menu)
+            msg, reply_markup=main_menu)
+
+
+# @dp.message_handler(Text(equals='История поисков'))
+# async def get_food(message: types.Message):
+#     await message.answer("")
 
 
 @dp.message_handler(Text(equals='История поисков'))
@@ -152,27 +205,40 @@ async def get_food(message: types.Message):
     await message.answer(f"Вы вернулись", reply_markup=main_menu)
 
 
-# пример для будущего перелистывания страниц
-@dp.callback_query_handler(lambda callback_query: True)
-async def process_callback_handler(callback_query: types.CallbackQuery):
-    if callback_query.data == 'button1':
-        await bot.send_message(callback_query.from_user.id, f'Нажата первая кнопка')
-
-
 @dp.message_handler(Text(equals='Начать поиск'))
-async def get_search(msg: types.Message):
+async def search(msg: types.Message):
     @dp.message_handler()
     async def user_answ_handler(msg: types.Message):
-        #recipes = bd.bot_find_recipes(msg.from_user.id, -1, msg.text)
-        recipes = bd.bot_find_recipes_by_ingredients(msg.text)
-        message = ''
-        buttons = []
-        for i, recipe in enumerate(recipes[:10]):
-            message += f'{i + 1}. {recipe.name}\n'
-            buttons.append(InlineKeyboardButton(f'{i + 1}', callback_data="ss"))
-        buttons_markup = InlineKeyboardMarkup().row().add(*buttons)
-        new_text = message.replace("\'", "")
-        await msg.answer(new_text, reply_markup=buttons_markup)
+        recipes = bd.bot_find_recipes_by_categories(msg.from_user.id, msg.text)
+        reply_fmt = get_reply_fmt(recipes)
+        await msg.answer(reply_fmt['msg'], reply_markup=reply_fmt['markup'])
+
+        @dp.callback_query_handler(recipe_cb.filter(action='list'))
+        async def query_show_list(query: types.CallbackQuery, callback_data: dict):
+            reply_fmt = get_reply_fmt(recipes, callback_data['start_indx'])
+            await query.message.edit_text(reply_fmt['msg'], reply_markup=reply_fmt['markup'])
+
+        @dp.callback_query_handler(recipe_cb.filter(action='view'))
+        async def query_view(query: types.CallbackQuery, callback_data: dict):
+            recipe_id = callback_data['id']
+            recipe = bd.make_recipe_object(recipe_id)
+            text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg.from_user.id)
+            await query.message.edit_text(text, reply_markup=markup)
+
+        @dp.callback_query_handler(recipe_cb.filter(action=['unfavourite', 'favourite']))
+        async def query_change_fav(query: types.CallbackQuery, callback_data: dict):
+            recipe_id = callback_data['id']
+            if callback_data['action'] == 'favourite':
+                bd.bot_add_favourite(msg.from_user.id, recipe_id)
+                suffix = '\n(Your favourite)'
+                await query.answer('Added to favourite')
+            else:
+                bd.bot_delete_favourite(msg.from_user.id, recipe_id)
+                suffix = ''
+                await query.answer('Deleted from favourites')
+            recipe = bd.make_recipe_object(recipe_id)
+            text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg.from_user.id)
+            await query.message.edit_text(text+suffix, reply_markup=markup)
 
 
 if __name__ == '__main__':
