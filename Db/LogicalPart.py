@@ -31,7 +31,6 @@ class LogicalPart:
 
         if ingr_diff_num != -1:
             result = self.find_recipe_without_diff(ingr_diff_num, len(ing_res), result)
-        print(result)
         final_result = []
         for r in result:
             final_result.append(self.make_recipe_object(r))
@@ -62,19 +61,25 @@ class LogicalPart:
             result.append(self.make_recipe_object(r))
         return result
 
-    def bot_find_recipes_by_ingredients(self, ingr_list):
-        recipes = self.select_by_ingredients(ingr_list)
+    def bot_find_recipes_by_ingredients(self, user_id, str_ing, ingr_diff_num):
+        ing_list = str_ing.split(', ')
+        recipes = self.select_by_ingredients(ing_list)
         result = []
         for r in recipes:
             result.append(self.make_recipe_object(r))
+        if(ingr_diff_num!=-1):
+            result = self.find_recipe_without_diff(ingr_diff_num, len(ing_list), result)
+        self.add_to_history(user_id, str_ing, None)
         return result
 
-    def bot_find_recipes_by_categories(self, categ_list):
+    def bot_find_recipes_by_categories(self, user_id, str_categ):
+        categ_list = str_categ.split(', ')
         recipes = self.select_by_category(categ_list)
         result = []
         for r in recipes:
             result.append(self.make_recipe_object(r))
             print(r)
+        self.add_to_history(user_id, None, str_categ)
         return result
 
     def sql_find_with_categories(self, elem):
@@ -147,10 +152,56 @@ class LogicalPart:
         for i in categories:
             i = str(i)[2:-3]
             categ.append(i)
-        return model.recipe.Recipe(name, image, ingr, link, description, calories, time_cooking, categ)
+        return model.recipe.Recipe(rec_id, name, image, ingr, link, description, calories, time_cooking, categ)
 
     def bot_get_history(self, user_id):
         self.db.cursor.execute("""select * from history where user_id like ?""", (user_id,))
+
+    def bot_get_new_users_week(self):
+        s_date = self.date_now()
+        res = []
+        for i in range(7):
+            self.db.cursor.execute("""select count(user_id) from users where date_of_adding = date(?)""", (s_date,))
+            count = str(self.db.cursor.fetchone())[1:-2]
+            res.append(count)
+            self.db.cursor.execute("""select date(?,'-1 days');""",(s_date,))
+            s_date = str(self.db.cursor.fetchone())[1:-2]
+        return res
+
+    def bot_get_new_users_month(self):
+        s_date = self.date_now()
+        res = []
+        for i in range(30):
+            self.db.cursor.execute("""select count(user_id) from users where date_of_adding = date(?)""", (s_date,))
+            count = str(self.db.cursor.fetchone())[1:-2]
+            res.append(count)
+            self.db.cursor.execute("""select date(?,'-1 days');""", (s_date,))
+            s_date = str(self.db.cursor.fetchone())[1:-2]
+        return res
+
+    def bot_get_active_users_week(self):
+        s_date = self.date_now()
+        res = []
+        for i in range(7):
+            self.db.cursor.execute("""select distinct count(user_id) from history where date_of_adding = date(?)""", (str(s_date),))
+            count = str(self.db.cursor.fetchone())[1:-2]
+            print(count)
+            res.append(count)
+            self.db.cursor.execute("""select date(?,'-1 days');""", (s_date,))
+            s_date = str(self.db.cursor.fetchone())[1:-2]
+        return res
+
+    def bot_get_active_users_month(self):
+        s_date = self.date_now()
+        res = []
+        for i in range(30):
+            self.db.cursor.execute("""select distinct count(user_id) from history where date_of_adding = date(?)""", (str(s_date),))
+            count = str(self.db.cursor.fetchone())[1:-2]
+            print(count)
+            res.append(count)
+            self.db.cursor.execute("""select date(?,'-1 days');""", (s_date,))
+            s_date = str(self.db.cursor.fetchone())[1:-2]
+        return res
 
     def add_to_history(self, user_id, products, categories):
         self.db.cursor.execute("""insert into history (user_id, products, categories, date_of_adding) 
@@ -176,8 +227,9 @@ class LogicalPart:
                                          (user_id, rec_id))
 
     def date_now(self):
-        self.db.connection.execute("""SELECT date('now');""")
-        return str(self.db.cursor.fetchone())[1:-2]
+        self.db.execute_query("""SELECT date('now');""")
+        res = str(self.db.cursor.fetchone())[2:-3]
+        return res
 
     def bot_make_user_admin(self, user_login):
         self.db.cursor.execute("""UPDATE users SET user_admin = TRUE WHERE user_login like ? """, (user_login,))
@@ -228,3 +280,7 @@ class LogicalPart:
     insert_new_user = """
        insert into users(user_id, user_login, user_admin, user_root_admin, date_of_adding) values(?, ?, FALSE, FALSE, date('now'));
        """
+
+lg = LogicalPart()
+lg.bot_find_recipes_by_name('молоко')
+lg.bot_get_active_users_week()
