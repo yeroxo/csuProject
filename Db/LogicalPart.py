@@ -191,7 +191,7 @@ class LogicalPart:
     def bot_delete_user_root_admin(self, user_login):
         self.db.cursor.execute("""UPDATE users SET user_root_admin = FALSE WHERE user_login like ? """, (user_login,))
 
-    def add_user(self, user_id, user_login):
+    def bot_add_user(self, user_id, user_login):
         args = (user_id,)
         cursor = self.db.connection.cursor()
         cursor.execute("""select * from users where user_id = ?;""", args)
@@ -201,7 +201,7 @@ class LogicalPart:
             print(str(res))
             self.db.connection.commit()
 
-    def is_admin(self, user_id):
+    def bot_check_is_admin(self, user_id):
         args = (user_id,)
         cursor = self.db.connection.cursor()
         cursor.execute("""select user_admin from users where user_id = ?;""", args)
@@ -213,7 +213,7 @@ class LogicalPart:
         else:
             return False
 
-    def is_root_admin(self, user_id):
+    def bot_check_is_root_admin(self, user_id):
         args = (user_id,)
         cursor = self.db.connection.cursor()
         cursor.execute("""select user_root_admin from users where user_id = ?;""", args)

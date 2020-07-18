@@ -30,6 +30,21 @@ main_menu = types.ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
+main_menu_admin = types.ReplyKeyboardMarkup(
+    keyboard=[
+        [
+            types.KeyboardButton(text='Профиль'),
+        ],
+        [
+            types.KeyboardButton(text='Поиск'),
+        ],
+        [
+            types.KeyboardButton(text='Панель Админа')
+        ]
+    ],
+    resize_keyboard=True
+)
+
 search_menu = types.ReplyKeyboardMarkup(
     keyboard=[
         [
@@ -91,11 +106,15 @@ hzchto = InlineKeyboardMarkup(
 
 @dp.message_handler(Command("start"))
 async def start_bot(message: types.Message):
-    await message.answer(f"Приветствуем в нашем боте {message.from_user.first_name}\nМы поможем тебе найти рецептики",
-                         reply_markup=main_menu)
-    bd.add_user(message.from_user.id)
-    bd.bot_find_recipes()
-    await message.answer(f"Ваш юзер айди {message.from_user.id}")
+    bd.bot_add_user(message.from_user.id, message.from_user.username)
+    if bd.bot_check_is_admin(message.from_user.id):
+        await message.answer(
+            f"Приветствуем в нашем боте {message.from_user.first_name}\nМы поможем тебе найти рецептики",
+            reply_markup=main_menu_admin)
+    else:
+        await message.answer(
+            f"Приветствуем в нашем боте {message.from_user.first_name}\nМы поможем тебе найти рецептики",
+            reply_markup=main_menu)
 
 
 @dp.message_handler(Text(equals='История поисков'))
