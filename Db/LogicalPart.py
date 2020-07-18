@@ -173,7 +173,7 @@ class LogicalPart:
 
     def bot_delete_favourite(self, user_id, rec_id):
         self.db.execute_query_with_value("""delete from favourites where user_id like ? and rec_id = ?""",
-                                      (user_id, rec_id))
+                                         (user_id, rec_id))
 
     def date_now(self):
         self.db.connection.execute("""SELECT date('now');""")
@@ -182,10 +182,49 @@ class LogicalPart:
     def bot_make_user_admin(self, user_login):
         self.db.cursor.execute("""UPDATE users SET user_admin = TRUE WHERE user_login like ? """, (user_login,))
 
+    def bot_make_user_root_admin(self, user_login):
+        self.db.cursor.execute("""UPDATE users SET user_root_admin = TRUE WHERE user_login like ? """, (user_login,))
+
     def bot_delete_user_admin(self, user_login):
         self.db.cursor.execute("""UPDATE users SET user_admin = FALSE WHERE user_login like ? """, (user_login,))
 
-# lg = LogicalPart()
-# lg.bot_find_recipes_by_categories('завтрак')
-# lg.bot_find_recipes_by_name('Торт')
-# lg.sql_find_with_ingredients('мука')
+    def bot_delete_user_root_admin(self, user_login):
+        self.db.cursor.execute("""UPDATE users SET user_root_admin = FALSE WHERE user_login like ? """, (user_login,))
+
+    def add_user(self, user_id, user_login):
+        args = (user_id,)
+        cursor = self.db.connection.cursor()
+        cursor.execute("""select * from users where user_id = ?;""", args)
+        row = cursor.fetchone()
+        if row is None:
+            res = self.db.connection.execute(self.insert_new_user, (user_id, user_login))
+            print(str(res))
+            self.db.connection.commit()
+
+    def is_admin(self, user_id):
+        args = (user_id,)
+        cursor = self.db.connection.cursor()
+        cursor.execute("""select user_admin from users where user_id = ?;""", args)
+        row = cursor.fetchone()
+        if row is not None:
+            row = str(row)[1:-2]
+            if row == '1':
+                return True
+        else:
+            return False
+
+    def is_root_admin(self, user_id):
+        args = (user_id,)
+        cursor = self.db.connection.cursor()
+        cursor.execute("""select user_root_admin from users where user_id = ?;""", args)
+        row = cursor.fetchone()
+        if row is not None:
+            row = str(row)[1:-2]
+            if row == '1':
+                return True
+        else:
+            return False
+
+    insert_new_user = """
+       insert into users(user_id, user_login, user_admin, user_root_admin, date_of_adding) values(?, ?, FALSE, FALSE, date('now'));
+       """
