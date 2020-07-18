@@ -156,6 +156,7 @@ class LogicalPart:
 
     def bot_get_history(self, user_id):
         self.db.cursor.execute("""select * from history where user_id like ?""", (user_id,))
+        return self.db.cursor.fetchall()
 
     def bot_get_new_users_week(self):
         s_date = self.date_now()
