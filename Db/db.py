@@ -57,15 +57,6 @@ class SqliteRecipes:
         self.execute_query_with_value("""insert into categories(c_name) values(?);""", args)
         self.connection.commit()
 
-    def add_user(self, user_id, user_login):
-        args = (user_id,)
-        cursor = self.connection.cursor()
-        cursor.execute("""select * from users where user_id = ?;""", args)
-        row = cursor.fetchone()
-        if row is None:
-            self.connection.execute(self.insert_new_user, (user_id, user_login))
-            self.connection.commit()
-
     def add_recipe(self, recipe):
         image = self.convert_image(recipe.image)
         self.connection.executemany(self.insert_new_recipe, ((recipe.name, image, recipe.description,
@@ -167,6 +158,7 @@ class SqliteRecipes:
          user_id TEXT PRIMARY KEY,
          user_login TEXT NOT NULL,
          user_admin BOOLEAN NOT NULL,
+         user_root_admin BOOLEAN NOT NULL,
          date_of_adding DATE NOT NULL
        );
        """
@@ -198,10 +190,6 @@ class SqliteRecipes:
           FOREIGN KEY (rec_id) REFERENCES recipes(rec_id),
           FOREIGN KEY (c_id) REFERENCES categories(c_id)
        );
-       """
-
-    insert_new_user = """
-       insert into users(user_id, user_login, user_admin, date_of_adding) values(?, ?, FALSE, date('now'));
        """
 
     insert_new_recipe = """
