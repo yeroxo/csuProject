@@ -207,7 +207,7 @@ class LogicalPart:
 
     def add_to_history(self, user_id, name, products, categories):
         self.db.cursor.execute("""insert into history (user_id, name, products, categories, date_of_adding) 
-           values(?,?,?,?);""", (user_id, name, products, categories, self.date_now()))
+           values(?,?,?,?,?);""", (user_id, name, products, categories, self.date_now()))
 
     def bot_get_categories(self):
         self.db.cursor.execute("""select * from categories;""")
@@ -288,6 +288,6 @@ class LogicalPart:
        insert into users(user_id, user_login, user_admin, user_root_admin, date_of_adding) values(?, ?, FALSE, FALSE, date('now'));
        """
 
-lg = LogicalPart()
-lg.bot_find_recipes_by_name('молоко')
-lg.bot_get_active_users_week()
+# lg = LogicalPart()
+# lg.bot_find_recipes_by_name('молоко')
+# lg.bot_get_active_users_week()
