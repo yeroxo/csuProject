@@ -29,5 +29,5 @@ class Scrapper:
 
 
 c = Scrapper()
-# c.parse_site(CrawlerTvoirecepty(), ParserTvoirecepty())
-#c.parse_site(CrawlerEdaRu(), ParserEdaRu())
+c.parse_site(CrawlerTvoirecepty(), ParserTvoirecepty())
+# c.parse_site(CrawlerEdaRu(), ParserEdaRu())

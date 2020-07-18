@@ -2,7 +2,8 @@ import logging
 
 from aiogram.dispatcher.filters import Command, Text
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from aiogram.utils import callback_data
+from aiogram.utils.callback_data import CallbackData
+
 
 from Bot import config
 from aiogram import Bot, Dispatcher, executor, types
@@ -17,6 +18,10 @@ bd = DataBase()
 # иницилизируем бота
 bot = Bot(token=config.API_TOKEN)
 dp = Dispatcher(bot)
+
+# local base
+local_bd = []
+current_page = 0
 
 main_menu = types.ReplyKeyboardMarkup(
     keyboard=[
@@ -119,7 +124,7 @@ async def start_bot(message: types.Message):
 
 @dp.message_handler(Text(equals='История поисков'))
 async def get_food(message: types.Message):
-    await message.answer(f"Вы выбрали {message.text}")
+    await message.answer("")
 
 
 @dp.message_handler(Text(equals='Избранное'))
@@ -151,17 +156,23 @@ async def get_food(message: types.Message):
 @dp.callback_query_handler(lambda callback_query: True)
 async def process_callback_handler(callback_query: types.CallbackQuery):
     if callback_query.data == 'button1':
-        await bot.send_message(callback_query.from_user.id, "Нажата первая кнопка")
-
-
-inline_btn_1 = InlineKeyboardButton('Первая кнопка!', callback_data='button1')
-inline_kb1 = InlineKeyboardMarkup().add(inline_btn_1)
+        await bot.send_message(callback_query.from_user.id, f'Нажата первая кнопка')
 
 
 @dp.message_handler(Text(equals='Начать поиск'))
 async def get_search(msg: types.Message):
-    a = bd.bot_find_recipes(msg.from_user.id, -1, "молоко")
-    await msg.answer(a, reply_markup=hzchto)
+    @dp.message_handler()
+    async def user_answ_handler(msg: types.Message):
+        #recipes = bd.bot_find_recipes(msg.from_user.id, -1, msg.text)
+        recipes = bd.bot_find_recipes_by_ingredients(msg.text)
+        message = ''
+        buttons = []
+        for i, recipe in enumerate(recipes[:10]):
+            message += f'{i + 1}. {recipe.name}\n'
+            buttons.append(InlineKeyboardButton(f'{i + 1}', callback_data="ss"))
+        buttons_markup = InlineKeyboardMarkup().row().add(*buttons)
+        new_text = message.replace("\'", "")
+        await msg.answer(new_text, reply_markup=buttons_markup)
 
 
 if __name__ == '__main__':

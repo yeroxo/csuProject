@@ -126,6 +126,10 @@ class ParserTvoirecepty(Parser):
         self.download_image(link, path)
         return path
 
+    def download_image(self, img_url, path):
+        urllib.parse.quote(':')
+        return urlretrieve(img_url, path)
+
 # c = CrawlerTvoirecepty()
 # print(c.url)
 # c = set(c)

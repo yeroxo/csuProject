@@ -46,5 +46,4 @@ class Parser(ABC):
 
     @abstractmethod
     def download_image(self, img_url, path):
-        urllib.parse.quote(':')
-        return urlretrieve(img_url, path)
+        pass
