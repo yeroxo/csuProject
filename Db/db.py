@@ -166,6 +166,7 @@ class SqliteRecipes:
     create_history_table = """
        CREATE TABLE IF NOT EXISTS history (
          user_id TEXT NOT NULL,
+         name TEXT,
          products TEXT,
          categories TEXT,
          date_of_adding DATE NOT NULL,
