@@ -46,10 +46,10 @@ class LogicalPart:
     def find_recipe_without_diff(self, diff_num, ingr_num, recipes_list):
         result = []
         for rec in recipes_list:
-            self.db.connection.execute("""select count(pr_id) from ingredients 
-                                                                   where rec_id = ?;""", (rec,))
+            self.db.execute_query_with_value("""select count(pr_id) from ingredients 
+                                                                   where rec_id = ?;""", (rec.id,))
             rec_ingr = self.db.cursor.fetchone()
-            if rec_ingr[0] - ingr_num > diff_num:
+            if rec_ingr[0] - ingr_num <= diff_num:
                 result.append(rec)
         return result
 
@@ -291,6 +291,6 @@ class LogicalPart:
        insert into users(user_id, user_login, user_admin, user_root_admin, date_of_adding) values(?, ?, FALSE, FALSE, date('now'));
        """
 
-lg = LogicalPart()
-lg.bot_find_recipes_by_name('12345','суп')
-# lg.bot_get_active_users_week()
+#lg = LogicalPart()
+#lg.bot_find_recipes_by_ingredients('12345','куриные ножки, кабачки, картофель, лук репчатый, чеснок, сметана, майонез, соль, перец черный молотый, молотая паприка, горчица французская в зернах',0)
+
