@@ -113,10 +113,8 @@ class ParserTvoirecepty(Parser):
             'time_cooking': self.get_time(soup),
             'categories': self.get_categories(soup)
         }
-        recipe_rec = Recipe(recipe['name'], recipe['image'], recipe['ingredients'], recipe['link'],
-                            recipe['description'], recipe['calories'], recipe['time_cooking'], recipe['categories'])
-        print(recipe)
-        return recipe_rec
+
+        return recipe
 
     def get_image(self, soup):
         link = soup.find('div', class_='crop-xs col-xs-12 nopadding').find('img').get('src')
