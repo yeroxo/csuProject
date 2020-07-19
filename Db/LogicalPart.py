@@ -11,7 +11,13 @@ class LogicalPart:
         filt_res = []
         ing_res = []
         if str_filt is not None:
-            filters_list = str_filt.split(', ')
+            filters_list = str_filt.split(',')
+            for i in range(len(filters_list)):
+                filters_list[i] = filters_list[i].strip()
+                while filters_list[i][0] == ' ':
+                    filters_list[i] = filters_list[i][1::]
+                while filters_list[i][-1] == ' ':
+                    filters_list[i] = filters_list[i][0:-2]
             filt_res = self.select_by_category(filters_list)
 
         if str_ing is not None:
@@ -64,7 +70,13 @@ class LogicalPart:
         return result
 
     def bot_find_recipes_by_ingredients(self, user_id, str_ing="", ingr_diff_num=-1):
-        ing_list = str_ing.split(', ')
+        ing_list = str_ing.split(',')
+        for i in range(len(ing_list)):
+            ing_list[i] = ing_list[i].strip()
+            while ing_list[i][0] == ' ':
+                ing_list[i] = ing_list[i][1::]
+            while ing_list[i][-1] == ' ':
+                ing_list[i] = ing_list[i][0:-2]
         recipes = self.select_by_ingredients(ing_list)
         result = []
         for r in recipes:
@@ -75,7 +87,13 @@ class LogicalPart:
         return result
 
     def bot_find_recipes_by_categories(self, user_id, str_categ):
-        categ_list = str_categ.split(', ')
+        categ_list = str_categ.split(',')
+        for i in range(len(categ_list)):
+            categ_list[i] = categ_list[i].strip()
+            while categ_list[i][0] == ' ':
+                categ_list[i] = categ_list[i][1::]
+            while categ_list[i][-1] == ' ':
+                categ_list[i] = categ_list[i][0:-2]
         recipes = self.select_by_category(categ_list)
         result = []
         for r in recipes:
@@ -294,7 +312,16 @@ class LogicalPart:
     insert_new_user = """
        insert into users(user_id, user_login, user_admin, user_root_admin, date_of_adding) values(?, ?, FALSE, FALSE, date('now'));
        """
-
-lg = LogicalPart()
-lg.bot_find_recipes_by_name('12345','суп')
-# lg.bot_get_active_users_week()
+if __name__ == '__main__':
+   # lg = LogicalPart()
+   # lg.bot_find_recipes_by_name('12345','суп')
+    # lg.bot_get_active_users_week()
+    str_ing = 'мясо , молоко, хлеб, кефир ,ликер, пиво'
+    ing_list = str_ing.split(',')
+    for i in range(len(ing_list)):
+        ing_list[i] = ing_list[i].strip()
+        while ing_list[i][0] == ' ':
+            ing_list[i] = ing_list[i][1::]
+        while ing_list[i][-1] == ' ':
+            ing_list[i] = ing_list[i][0:-2]
+    print(ing_list)

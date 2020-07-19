@@ -4,7 +4,7 @@ import model.recipe
 import sys
 import model.recipe
 
-
+print(type(sqlite3.connect("../Db/databasee.db").cursor()))
 class SqliteRecipes:
     def __init__(self):
         self.connection = self.create_connection("../Db/database.db")
