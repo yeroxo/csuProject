@@ -55,7 +55,7 @@ class LogicalPart:
 
     def bot_find_recipes_by_name(self, user_id, str_name):
         recipes = self.db.cursor.execute("""select rec_id from recipes
-                                                   where rec_name like ?""", ('%'+str_name+'%',))
+                                                   where lower(rec_name) like ?""", ('%'+str_name.lower()+'%',))
         result = []
         for r in recipes:
             r = str(r)[1:-2]
@@ -216,11 +216,13 @@ class LogicalPart:
         self.db.cursor.execute("""select * from categories;""")
 
     def bot_get_favourites(self, user_id):
-        self.db.cursor.execute("""select * from favourites where user_id like ?""", (user_id,))
-        result = self.db.cursor.fetchall()
-        if result:
-            return result
-        return None
+        self.db.cursor.execute("""select rec_id from favourites where user_id like ?""", (user_id,))
+        recipes = self.db.cursor.fetchall()
+        result = []
+        for r in recipes:
+            r = str(r)[1:-2]
+            result.append(self.make_recipe_object(r))
+        return result
 
     def bot_add_favourite(self, user_id, rec_id):
         self.db.cursor.execute("""select * from favourites where user_id like ? and rec_id = ?""",
@@ -290,7 +292,6 @@ class LogicalPart:
     insert_new_user = """
        insert into users(user_id, user_login, user_admin, user_root_admin, date_of_adding) values(?, ?, FALSE, FALSE, date('now'));
        """
-
-#lg = LogicalPart()
+lg = LogicalPart()
 #lg.bot_find_recipes_by_ingredients('12345','куриные ножки, кабачки, картофель, лук репчатый, чеснок, сметана, майонез, соль, перец черный молотый, молотая паприка, горчица французская в зернах',0)
-
+lg.bot_get_favourites('12345')
