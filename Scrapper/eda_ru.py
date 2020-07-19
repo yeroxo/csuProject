@@ -62,7 +62,7 @@ class ParserEdaRu(Parser):
         arr_categ = []
         categ = item.find(class_='breadcrumbs').find_all('a')
         for c in categ:
-            arr_categ.append(c.get_text())
+            arr_categ.append(c.get_text().lower())
         return arr_categ
 
     def get_calories(self, item):
