@@ -76,10 +76,10 @@ search_by_categories = types.ReplyKeyboardMarkup(
 search_by_ingredients = types.ReplyKeyboardMarkup(
     keyboard=[
         [
-            types.KeyboardButton(text='Точный поиск')
+            types.KeyboardButton(text='Точный поиск..')
         ],
         [
-            types.KeyboardButton(text='Точный поиск')
+            types.KeyboardButton(text='Поиск блюд с ингридиентом...')
         ],
         [
             types.KeyboardButton(text='Вернуться')
@@ -91,7 +91,7 @@ search_by_ingredients = types.ReplyKeyboardMarkup(
 
 # types.KeyboardButton(text='Хочу найти рецепты с ингредиентами...')
 
-@dp.message_handler(commands=["start"])
+@dp.message_handler(commands=["start"],state='*')
 async def start_bot(message: types.Message):
     bd.bot_add_user(message.from_user.id, message.from_user.username)
 
@@ -104,28 +104,28 @@ async def start_bot(message: types.Message):
             msg, reply_markup=main_menu)
 
 
-@dp.message_handler(Text(equals='Вернуться'))
+@dp.message_handler(Text(equals='Вернуться'),state='*')
 async def back(message: types.Message):
     await message.answer(f"Вы вернулись", reply_markup=main_menu)
 
 
-@dp.message_handler(Text(equals='Поиск'))
+@dp.message_handler(Text(equals='Поиск'),state='*')
 async def choose_search_type(msg: types.Message):
     await msg.answer(f'Вы перешли в {msg.text}', reply_markup=search_menu)
 
 
-@dp.message_handler(Text(equals='Поиск по категориям'))
+@dp.message_handler(Text(equals='Поиск по категориям'),state='*')
 async def choose_search_type_categories(msg: types.Message):
     await msg.answer('Если  вы хотите начать поиск - сначала нажмите кнопку, потом введите текст',
                      reply_markup=search_by_categories)
 
 
-@dp.message_handler(Text(equals='Поиск по ингредиентам'))
+@dp.message_handler(Text(equals='Поиск по ингредиентам'),state='*')
 async def choose_search_type(msg: types.Message):
     await msg.answer(f'Выберите точность с который будет найден рецепт',
                      reply_markup=search_by_ingredients)
 
 
-@dp.message_handler(Text(equals='Поиск по названию'))
+@dp.message_handler(Text(equals='Поиск по названию'),state='*')
 async def choose_search_type_name(msg: types.Message):
     await msg.answer('Нажмите кнопку и введите название интересующего вас рецепта', reply_markup=search_by_name)

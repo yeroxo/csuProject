@@ -213,6 +213,10 @@ class LogicalPart:
 
     def bot_get_categories(self):
         self.db.cursor.execute("""select * from categories;""")
+        result = self.db.cursor.fetchall()
+        if result:
+            return result
+        return None
 
     def bot_get_favourites(self, user_id):
         self.db.cursor.execute("""select * from favourites where user_id like ?""", (user_id,))

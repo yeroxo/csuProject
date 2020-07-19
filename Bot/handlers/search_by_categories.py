@@ -121,3 +121,11 @@ async def search_categories(msg_search_type: types.Message):
             recipe = bd.make_recipe_object(recipe_id)
             text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg_for_search.from_user.id)
             await query.message.edit_text(text + suffix, reply_markup=markup)
+
+@dp.message_handler(Text(equals='Показать все категории'),state="*")
+async def search_categories(msg_search_type: types.Message):
+    all_categories = bd.bot_get_categories()
+    text = ""
+    for i,category in enumerate(all_categories):
+        text += f'{i+1} {category[1]}\n'
+    await msg_search_type.answer(text)

@@ -86,7 +86,7 @@ async def search_ingredients(msg_search_type: types.Message):
     async def user_answer_handler(msg_for_search: types.Message, state: FSMContext):
         # TODO: diff
         diff = -1
-        recipes = bd.bot_find_recipes_by_ingredients(msg_for_search.from_user.id, msg_for_search.text, diff)
+        recipes = bd.bot_find_recipes_by_ingredients(msg_for_search.from_user.id, msg_for_search.text, 0)
         reply_fmt = get_reply_fmt(recipes)
         if len(recipes) <= 0:
             await bot.send_message(msg_for_search.chat.id, 'Не могу найти ничего по вашему запросу')
