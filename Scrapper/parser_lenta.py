@@ -21,14 +21,14 @@ class ParserLenta:
         ingredients = []
         info = item.find_all('div', class_='recipe-ingredients-list-row')
         for ingredient in info:
-            ingredients.append(ingredient.find('div', class_='recipe-checkbox__label').text)
+            ingredients.append(ingredient.find('div', class_='recipe-checkbox__label').text.lower())
         return ingredients
 
     def get_categories(self, item):
         tags = []
         info = item.find_all('a', class_='recipe-tags__item')
         for i in info:
-            tags.append(i.text.replace('  ', '').strip())
+            tags.append(i.text.replace('  ', '').strip().lower())
         return tags
 
     def get_cal(self, soup):

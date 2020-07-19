@@ -21,7 +21,7 @@ class CrawlerEdaRu(Crawler):
 
     def get_recipes_links(self):
         page_links = []
-        for page_num in range(1):
+        for page_num in range(324):
             page_links.append(self.url + '?page=' + str(page_num + 1))
         print(page_links)
         for page in page_links:
@@ -62,7 +62,7 @@ class ParserEdaRu(Parser):
         arr_categ = []
         categ = item.find(class_='breadcrumbs').find_all('a')
         for c in categ:
-            arr_categ.append(c.get_text())
+            arr_categ.append(c.get_text().lower())
         return arr_categ
 
     def get_calories(self, item):
@@ -100,7 +100,7 @@ class ParserEdaRu(Parser):
     def get_image(self, item):
         link = item.find('img').get('src')
         elements = link.split('/')
-        name = elements[-1]
+        name = elements[-2] + '.jpg'
         path = f'../photos/{name}'
         self.download_image(link, path)
         return path
@@ -118,9 +118,3 @@ class ParserEdaRu(Parser):
                 db.add_recipe(rec)
             else:
                 print("error")
-
-#crawler = CrawlerEdaRu()
-#parser = ParserEdaRu()
-# parser.parse(['https://eda.ru/recepty/zavtraki/sirniki-iz-tvoroga-18506', 'https://eda.ru/recepty/supy/sirnij-sup-po-francuzski-s-kuricej-32614'])
-# crawler.get_recipes_links()
-#parser.parse(['https://eda.ru/recepty/pasta-picca/spagetti-karbonara-s-krasnym-lukom-17614'])

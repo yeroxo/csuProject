@@ -1,4 +1,6 @@
+import urllib
 from abc import ABC, abstractmethod, abstractproperty
+from urllib.request import urlretrieve
 
 
 class Crawler(ABC):
