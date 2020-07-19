@@ -78,7 +78,7 @@ def format_recipe(recipe_id: str, start_indx: str, recipe: Recipe, user_id) -> (
     return text, markup
 
 
-@dp.message_handler(Text(equals='Хочу найти рецепты с категорией...'),state="*")
+@dp.message_handler(Text(equals='Хочу найти рецепты с категорией...'), state="*")
 async def search_categories(msg_search_type: types.Message):
     await SearchByCategories.waiting_for_user_answer.set()
 
@@ -93,21 +93,22 @@ async def search_categories(msg_search_type: types.Message):
 
         await SearchByCategories.next()
 
-        @dp.callback_query_handler(recipe_cb.filter(action='list'),state=SearchByCategories.waiting_for_user_view)
+        @dp.callback_query_handler(recipe_cb.filter(action='list'), state=SearchByCategories.waiting_for_user_view)
         async def query_show_list(query: types.CallbackQuery, callback_data: dict):
             history_recipe = bd.bot_get_history(msg_for_search.from_user.id)[-1]
             last_recipes = bd.bot_find_recipes_by_categories(msg_for_search.from_user.id, history_recipe[3])
             reply_fmt = get_reply_fmt(last_recipes, callback_data['start_indx'])
             await query.message.edit_text(reply_fmt['msg'], reply_markup=reply_fmt['markup'])
 
-        @dp.callback_query_handler(recipe_cb.filter(action='view'),state=SearchByCategories.waiting_for_user_view)
+        @dp.callback_query_handler(recipe_cb.filter(action='view'), state=SearchByCategories.waiting_for_user_view)
         async def query_view(query: types.CallbackQuery, callback_data: dict):
             recipe_id = callback_data['recipe_id']
             recipe = bd.make_recipe_object(recipe_id)
             text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg_for_search.from_user.id)
             await query.message.edit_text(text, reply_markup=markup)
 
-        @dp.callback_query_handler(recipe_cb.filter(action=['unfavourite', 'favourite']),state=SearchByCategories.waiting_for_user_view)
+        @dp.callback_query_handler(recipe_cb.filter(action=['unfavourite', 'favourite']),
+                                   state=SearchByCategories.waiting_for_user_view)
         async def query_change_fav(query: types.CallbackQuery, callback_data: dict):
             recipe_id = callback_data['recipe_id']
             if callback_data['action'] == 'favourite':
@@ -122,10 +123,11 @@ async def search_categories(msg_search_type: types.Message):
             text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg_for_search.from_user.id)
             await query.message.edit_text(text + suffix, reply_markup=markup)
 
-@dp.message_handler(Text(equals='Показать все категории'),state="*")
+
+@dp.message_handler(Text(equals='Показать все категории'), state="*")
 async def search_categories(msg_search_type: types.Message):
     all_categories = bd.bot_get_categories()
     text = ""
-    for i,category in enumerate(all_categories):
-        text += f'{i+1} {category[1]}\n'
+    for i, category in enumerate(all_categories):
+        text += f'{i + 1} {category[1]}\n'
     await msg_search_type.answer(text)

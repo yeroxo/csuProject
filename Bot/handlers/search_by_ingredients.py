@@ -78,15 +78,20 @@ def format_recipe(recipe_id: str, start_indx: str, recipe: Recipe, user_id) -> (
     return text, markup
 
 
-@dp.message_handler(Text(equals='Хочу найти рецепты с ингредиентами...'), state="*")
-async def search_ingredients(msg_search_type: types.Message):
+@dp.message_handler(Text(equals=['Точный поиск..', 'Поиск блюд с ингридиентом...']),
+                    state="*")
+async def search_ingredients(msg_search_type: types.Message,state:FSMContext):
+    if msg_search_type.text == 'Точный поиск..':
+        await state.update_data(diff=0)
+    elif msg_search_type.text == 'Поиск блюд с ингридиентом...':
+        await state.update_data(diff=-1)
+
     await SearchByIngredients.waiting_for_user_answer.set()
 
     @dp.message_handler(state=SearchByIngredients.waiting_for_user_answer)
-    async def user_answer_handler(msg_for_search: types.Message, state: FSMContext):
-        # TODO: diff
-        diff = -1
-        recipes = bd.bot_find_recipes_by_ingredients(msg_for_search.from_user.id, msg_for_search.text, 0)
+    async def user_answer_handler(msg_for_search: types.Message):
+        diff = await state.get_data()
+        recipes = bd.bot_find_recipes_by_ingredients(msg_for_search.from_user.id, msg_for_search.text, diff['diff'])
         reply_fmt = get_reply_fmt(recipes)
         if len(recipes) <= 0:
             await bot.send_message(msg_for_search.chat.id, 'Не могу найти ничего по вашему запросу')
@@ -95,17 +100,21 @@ async def search_ingredients(msg_search_type: types.Message):
         await SearchByIngredients.next()
 
         @dp.callback_query_handler(recipe_cb.filter(action='list'), state=SearchByIngredients.waiting_for_user_view)
-        async def query_show_list(query: types.CallbackQuery, callback_data: dict, state: FSMContext):
+        async def query_show_list(query: types.CallbackQuery, callback_data: dict):
+            diff = await state.get_data()
             history_recipe = bd.bot_get_history(msg_for_search.from_user.id)[-1]
-            last_recipes = bd.bot_find_recipes_by_ingredients(msg_for_search.from_user.id, history_recipe[2])
+            last_recipes = bd.bot_find_recipes_by_ingredients(msg_for_search.from_user.id, history_recipe[2],
+                                                              diff['diff'])
             reply_fmt = get_reply_fmt(last_recipes, callback_data['start_indx'])
             await query.message.edit_text(reply_fmt['msg'], reply_markup=reply_fmt['markup'])
+            await state.finish()
 
         @dp.callback_query_handler(recipe_cb.filter(action='view'), state=SearchByIngredients.waiting_for_user_view)
         async def query_view(query: types.CallbackQuery, callback_data: dict):
             recipe_id = callback_data['recipe_id']
             recipe = bd.make_recipe_object(recipe_id)
-            text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg_for_search.from_user.id)
+            text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe,
+                                         msg_for_search.from_user.id)
             await query.message.edit_text(text, reply_markup=markup)
 
         @dp.callback_query_handler(recipe_cb.filter(action=['unfavourite', 'favourite']),
@@ -121,9 +130,6 @@ async def search_ingredients(msg_search_type: types.Message):
                 suffix = ''
                 await query.answer('Deleted from favourites')
             recipe = bd.make_recipe_object(recipe_id)
-            text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg_for_search.from_user.id)
+            text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe,
+                                         msg_for_search.from_user.id)
             await query.message.edit_text(text + suffix, reply_markup=markup)
-
-
-
-

@@ -54,13 +54,13 @@ class LogicalPart:
         return result
 
     def bot_find_recipes_by_name(self, user_id, str_name):
+        self.add_to_history(user_id, str_name, None, None)
         recipes = self.db.cursor.execute("""select rec_id from recipes
                                                    where rec_name like ?""", ('%'+str_name+'%',))
         result = []
         for r in recipes:
             r = str(r)[1:-2]
             result.append(self.make_recipe_object(r))
-        self.add_to_history(user_id, str_name, None, None)
         return result
 
     def bot_find_recipes_by_ingredients(self, user_id, str_ing="", ingr_diff_num=-1):
@@ -211,6 +211,8 @@ class LogicalPart:
     def add_to_history(self, user_id, name, products, categories):
         self.db.cursor.execute("""insert into history (user_id, name, products, categories, date_of_adding) 
            values(?,?,?,?,?);""", (user_id, name, products, categories, self.date_now()))
+        self.db.connection.commit()
+
 
     def bot_get_categories(self):
         self.db.cursor.execute("""select * from categories;""")
@@ -294,7 +296,3 @@ class LogicalPart:
     insert_new_user = """
        insert into users(user_id, user_login, user_admin, user_root_admin, date_of_adding) values(?, ?, FALSE, FALSE, date('now'));
        """
-
-lg = LogicalPart()
-lg.bot_find_recipes_by_name('12345','суп')
-# lg.bot_get_active_users_week()
