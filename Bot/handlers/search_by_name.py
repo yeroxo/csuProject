@@ -1,10 +1,12 @@
+import os
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Command, Text
 from aiogram.utils.callback_data import CallbackData
 
-from Bot.handlers.inline_methods import get_reply_fmt, recipe_cb, format_recipe
+from Bot.handlers.inline_methods import get_reply_fmt, recipe_cb, format_recipe, query_handler_view
 from Bot.misc import bd, dp, bot
 from model.recipe import Recipe
 
@@ -20,7 +22,6 @@ async def search_names_by_name(msg_search_type: types.Message):
 
     @dp.message_handler(state=SearchByName.waiting_for_user_answer)
     async def user_answer_handler_by_name(msg_for_search: types.Message, ):
-        # TODO: diff
         recipes = bd.bot_find_recipes_by_name(msg_for_search.from_user.id, msg_for_search.text.lower())
         reply_fmt = get_reply_fmt(recipes)
         if len(recipes) <= 0:
@@ -32,16 +33,16 @@ async def search_names_by_name(msg_search_type: types.Message):
         @dp.callback_query_handler(recipe_cb.filter(action='list'), state=SearchByName.waiting_for_user_view)
         async def query_show_list_by_name(query: types.CallbackQuery, callback_data: dict):
             history_recipe = bd.bot_get_history(msg_for_search.from_user.id)[0]
-            last_recipes = bd.bot_find_recipes_by_name(msg_for_search.from_user.id, history_recipe[1])
+            last_recipes = bd.bot_find_recipes_by_name(msg_for_search.from_user.id, history_recipe[1].lower())
             reply_fmt = get_reply_fmt(last_recipes, callback_data['start_indx'])
             await query.message.edit_text(reply_fmt['msg'], reply_markup=reply_fmt['markup'])
 
         @dp.callback_query_handler(recipe_cb.filter(action='view'), state=SearchByName.waiting_for_user_view)
         async def query_view_by_name(query: types.CallbackQuery, callback_data: dict):
-            recipe_id = callback_data['recipe_id']
-            recipe = bd.make_recipe_object(recipe_id)
-            text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg_for_search.from_user.id)
-            await query.message.edit_text(text, reply_markup=markup)
+            data = query_handler_view(msg_for_search, callback_data)
+            await query.message.answer_photo(open(data[2],'rb'))
+            os.remove(data[2])
+            await query.message.answer_photo(data[0], reply_markup=data[1])
 
         @dp.callback_query_handler(recipe_cb.filter(action=['unfavourite', 'favourite']),
                                    state=SearchByName.waiting_for_user_view)
@@ -56,5 +57,5 @@ async def search_names_by_name(msg_search_type: types.Message):
                 suffix = ''
                 await query.answer('Deleted from favourites')
             recipe = bd.make_recipe_object(recipe_id)
-            text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg_for_search.from_user.id)
+            text, markup,photo = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg_for_search.from_user.id)
             await query.message.edit_text(text + suffix, reply_markup=markup)

@@ -115,8 +115,7 @@ class SqliteRecipes:
 
     def convert_image(self, img_path):
         data = self.read_image(img_path)
-        binary = sqlite3.Binary(data)
-        return binary
+        return data
 
     create_products_table = """
     CREATE TABLE IF NOT EXISTS products (

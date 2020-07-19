@@ -1,3 +1,5 @@
+import os
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
@@ -32,14 +34,16 @@ async def search_categories_by_categories(msg_search_type: types.Message):
         @dp.callback_query_handler(recipe_cb.filter(action='list'), state=SearchByCategories.waiting_for_user_view)
         async def query_show_list_by_categories(query: types.CallbackQuery, callback_data: dict):
             history_recipe = bd.bot_get_history(msg_for_search.from_user.id)[0]
-            last_recipes = bd.bot_find_recipes_by_categories(msg_for_search.from_user.id, history_recipe[3])
+            last_recipes = bd.bot_find_recipes_by_categories(msg_for_search.from_user.id, history_recipe[3].lower())
             reply_fmt = get_reply_fmt(last_recipes, callback_data['start_indx'])
             await query.message.edit_text(reply_fmt['msg'], reply_markup=reply_fmt['markup'])
 
         @dp.callback_query_handler(recipe_cb.filter(action='view'), state=SearchByCategories.waiting_for_user_view)
         async def query_view_by_categories(query: types.CallbackQuery, callback_data: dict):
             data = query_handler_view(msg_for_search, callback_data)
-            await query.message.edit_text(data[0], reply_markup=data[1])
+            await query.message.answer_photo(open(data[2],'rb'))
+            os.remove(data[2])
+            await query.message.answer_photo(data[0], reply_markup=data[1])
 
         @dp.callback_query_handler(recipe_cb.filter(action=['unfavourite', 'favourite']),
                                    state=SearchByCategories.waiting_for_user_view)
@@ -54,14 +58,8 @@ async def search_categories_by_categories(msg_search_type: types.Message):
                 suffix = ''
                 await query.answer('Deleted from favourites')
             recipe = bd.make_recipe_object(recipe_id)
-            text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg_for_search.from_user.id)
+            text, markup,photo = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg_for_search.from_user.id)
             await query.message.edit_text(text + suffix, reply_markup=markup)
 
 
-@dp.message_handler(Text(equals='Показать все категории'), state="*")
-async def search_categories(msg_search_type: types.Message):
-    all_categories = bd.bot_get_categories()
-    text = ""
-    for i, category in enumerate(all_categories):
-        text += f'{i + 1} {category[1]}\n'
-    await msg_search_type.answer(text)
+

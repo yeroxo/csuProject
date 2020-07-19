@@ -109,6 +109,9 @@ admin_action = types.ReplyKeyboardMarkup(
             types.KeyboardButton(text='Статистика по активным')
         ],
         [
+            types.KeyboardButton(text='Управление админами')
+        ],
+        [
             types.KeyboardButton(text='Вернуться')
         ]
     ],

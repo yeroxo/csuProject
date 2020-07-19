@@ -1,10 +1,12 @@
+import os
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.dispatcher.filters import Command, Text
 from aiogram.utils.callback_data import CallbackData
 
-from Bot.handlers.inline_methods import get_reply_fmt, recipe_cb, format_recipe
+from Bot.handlers.inline_methods import get_reply_fmt, recipe_cb, format_recipe, query_handler_view
 from Bot.misc import bd, dp, bot
 from model.recipe import Recipe
 
@@ -32,10 +34,11 @@ async def search_names_by_name(msg_search_type: types.Message):
 
     @dp.callback_query_handler(recipe_cb.filter(action='view'), state=ShowFavourites.waiting_for_user_view)
     async def query_view_by_name(query: types.CallbackQuery, callback_data: dict):
-        recipe_id = callback_data['recipe_id']
-        recipe = bd.make_recipe_object(recipe_id)
-        text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg_search_type.from_user.id)
-        await query.message.edit_text(text, reply_markup=markup)
+        data = query_handler_view(msg_search_type, callback_data)
+        await query.message.answer_photo(open(data[2], 'rb'))
+        os.remove(data[2])
+        await query.message.answer_photo(data[0], reply_markup=data[1])
+
 
     @dp.callback_query_handler(recipe_cb.filter(action=['unfavourite', 'favourite']),
                                state=ShowFavourites.waiting_for_user_view)
@@ -50,5 +53,5 @@ async def search_names_by_name(msg_search_type: types.Message):
             suffix = ''
             await query.answer('Deleted from favourites')
         recipe = bd.make_recipe_object(recipe_id)
-        text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg_search_type.from_user.id)
+        text, markup,photo = format_recipe(recipe_id, callback_data['start_indx'], recipe, msg_search_type.from_user.id)
         await query.message.edit_text(text + suffix, reply_markup=markup)

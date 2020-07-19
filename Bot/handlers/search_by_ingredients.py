@@ -1,3 +1,5 @@
+import os
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
@@ -41,15 +43,18 @@ async def search_ingredients(msg_search_type: types.Message, state: FSMContext):
         async def query_show_list_by_ingredients(query: types.CallbackQuery, callback_data: dict):
             diff = await state.get_data()
             history_recipe = bd.bot_get_history(msg_for_search.from_user.id)[0]
-            last_recipes = bd.bot_find_recipes_by_ingredients(msg_for_search.from_user.id, history_recipe[2],
+            last_recipes = bd.bot_find_recipes_by_ingredients(msg_for_search.from_user.id, history_recipe[2].lower(),
                                                               diff['diff'])
             reply_fmt = get_reply_fmt(last_recipes, callback_data['start_indx'])
             await query.message.edit_text(reply_fmt['msg'], reply_markup=reply_fmt['markup'])
 
         @dp.callback_query_handler(recipe_cb.filter(action='view'), state=SearchByIngredients.waiting_for_user_view)
-        async def query_view_by_ingredients(query: types.CallbackQuery, callback_data: dict):
+        async def query_view_by_ingredients(query: types.CallbackQuery, callback_data: dict,state:FSMContext):
             data = query_handler_view(msg_for_search, callback_data)
-            await query.message.edit_text(data[0], reply_markup=data[1])
+
+            await query.message.answer_photo(open(data[2],'rb'))
+            os.remove(data[2])
+            await query.message.answer(data[0], reply_markup=data[1])
 
         @dp.callback_query_handler(recipe_cb.filter(action=['unfavourite', 'favourite']),
                                    state=SearchByIngredients.waiting_for_user_view)
@@ -58,12 +63,12 @@ async def search_ingredients(msg_search_type: types.Message, state: FSMContext):
             if callback_data['action'] == 'favourite':
                 bd.bot_add_favourite(msg_for_search.from_user.id, recipe_id)
                 suffix = '\n(Your favourite)'
-                await query.answer('Added to favourite')
+                await query.message.edit_text('Added to favourite')
             else:
                 bd.bot_delete_favourite(msg_for_search.from_user.id, recipe_id)
                 suffix = ''
-                await query.answer('Deleted from favourites')
+                await query.message.edit_text('Deleted from favourites')
             recipe = bd.make_recipe_object(recipe_id)
-            text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe,
+            text, markup,photo = format_recipe(recipe_id, callback_data['start_indx'], recipe,
                                          msg_for_search.from_user.id)
             await query.message.edit_text(text + suffix, reply_markup=markup)

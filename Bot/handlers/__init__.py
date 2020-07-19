@@ -5,3 +5,5 @@ from . import search_by_name
 from . import inline_methods
 from . import show_favourites
 from . import admin_handlers
+from . import matpolib_graph_maker
+from . import categories_handler

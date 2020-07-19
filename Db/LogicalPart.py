@@ -56,7 +56,7 @@ class LogicalPart:
     def bot_find_recipes_by_name(self, user_id, str_name):
         self.add_to_history(user_id, str_name, None, None)
         recipes = self.db.cursor.execute("""select rec_id from recipes
-                                                   where lower(rec_name) like ?""", ('%' + str_name.lower() + '%',))
+                                                   where lower(rec_name) like ?""", (f'%{str_name.lower()}%',))
         result = []
         for r in recipes:
             r = str(r)[1:-2]
@@ -135,9 +135,9 @@ class LogicalPart:
             """select rec_name from recipes where rec_id = ?;""",
             (rec_id,)).fetchone())[1:-2]
         # нужно как-то раскодировать изображение
-        image = str(self.db.cursor.execute(
+        image =(self.db.cursor.execute(
             """select rec_image from recipes where rec_id = ?;""",
-            (rec_id,)).fetchone())[1:-2]
+            (rec_id,)).fetchone())
         ingredients = self.db.cursor.execute(
             """select pr_name from products p 
          join ingredients i on i.pr_id=p.pr_id 
@@ -191,46 +191,63 @@ class LogicalPart:
             self.db.cursor.execute("""select count(user_id) from users where date(date_of_adding) = date(?)""",
                                    (s_date,))
             count = str(self.db.cursor.fetchone())[1:-2]
-            res.append([s_date, count])
+            res.append(count)
             self.db.cursor.execute("""select date(?,'-1 days');""", (s_date,))
             s_date = str(self.db.cursor.fetchone())[2:-3]
         return res
 
     def bot_get_new_users_month(self):
-        s_date = self.date_now()
+        s_date = self.date_now_without_hours()
         res = []
         for i in range(30):
-            self.db.cursor.execute("""select count(user_id) from users where date_of_adding = date(?)""", (s_date,))
+            self.db.cursor.execute("""select count(user_id) from users where date(date_of_adding) = date(?)""", (s_date,))
             count = str(self.db.cursor.fetchone())[1:-2]
             res.append(count)
             self.db.cursor.execute("""select date(?,'-1 days');""", (s_date,))
-            s_date = str(self.db.cursor.fetchone())[1:-2]
+            s_date = str(self.db.cursor.fetchone())[2:-3]
         return res
+
+    # def bot_get_active_users_week(self):
+    #     s_date = self.date_now_without_hours()
+    #     res = []
+    #     for i in range(7):
+    #         self.db.cursor.execute("""select distinct user_id from history where date(date_of_adding) = date(?)""",
+    #                                (str(s_date),))
+    #         list = self.db.cursor.fetchone()
+    #         if list is not None:
+    #             res.append((s_date, len(list)))
+    #         else:
+    #             res.append((s_date, 0))
+    #         self.db.cursor.execute("""select date(?,'-1 days');""", (s_date,))
+    #         s_date = str(self.db.cursor.fetchone())[2:-3]
+    #     return res
 
     def bot_get_active_users_week(self):
-        s_date = self.date_now()
+        s_date = self.db.cursor.execute("""select date('now')""").fetchone()
+        s_date = str(s_date)[2:-3]
         res = []
         for i in range(7):
-            self.db.cursor.execute("""select distinct count(user_id) from history where date_of_adding = date(?)""",
-                                   (str(s_date),))
-            count = str(self.db.cursor.fetchone())[1:-2]
-            print(count)
-            res.append(count)
+            self.db.cursor.execute(
+                """select count(DISTINCT user_id) from history where date(date_of_adding) = date(?)""",
+                (str(s_date),))
+            users = self.db.cursor.fetchone()
+            res.append(users[0])
             self.db.cursor.execute("""select date(?,'-1 days');""", (s_date,))
-            s_date = str(self.db.cursor.fetchone())[1:-2]
+            s_date = str(self.db.cursor.fetchone())[2:-3]
         return res
 
+
+
     def bot_get_active_users_month(self):
-        s_date = self.date_now()
+        s_date = self.date_now_without_hours()
         res = []
         for i in range(30):
-            self.db.cursor.execute("""select distinct count(user_id) from history where date_of_adding = date(?)""",
+            self.db.cursor.execute("""select count(DISTINCT user_id) from history where date(date_of_adding) = date(?)""",
                                    (str(s_date),))
-            count = str(self.db.cursor.fetchone())[1:-2]
-            print(count)
-            res.append(count)
+            users = self.db.cursor.fetchone()
+            res.append(users[0])
             self.db.cursor.execute("""select date(?,'-1 days');""", (s_date,))
-            s_date = str(self.db.cursor.fetchone())[1:-2]
+            s_date = str(self.db.cursor.fetchone())[2:-3]
         return res
 
     def add_to_history(self, user_id, name, products, categories):
@@ -249,12 +266,13 @@ class LogicalPart:
         self.db.cursor.execute("""select rec_id from favourites where user_id like ?""", (user_id,))
         recipes = self.db.cursor.fetchall()
         result = []
-        for r in recipes:
-            r = str(r)[1:-2]
-        result.append(self.make_recipe_object(r))
-        if result:
+        if recipes:
+            for r in recipes:
+                r = str(r)[1:-2]
+                result.append(self.make_recipe_object(r))
             return result
-        return None
+        else:
+            return None
 
     def bot_add_favourite(self, user_id, rec_id):
         self.db.cursor.execute("""select * from favourites where user_id like ? and rec_id = ?""",
@@ -282,12 +300,14 @@ class LogicalPart:
 
     def bot_make_user_admin(self, user_login):
         self.db.cursor.execute("""UPDATE users SET user_admin = TRUE WHERE user_login like ? """, (user_login,))
+        self.db.connection.commit()
 
     def bot_make_user_root_admin(self, user_login):
         self.db.cursor.execute("""UPDATE users SET user_root_admin = TRUE WHERE user_login like ? """, (user_login,))
 
     def bot_delete_user_admin(self, user_login):
         self.db.cursor.execute("""UPDATE users SET user_admin = FALSE WHERE user_login like ? """, (user_login,))
+        self.db.connection.commit()
 
     def bot_delete_user_root_admin(self, user_login):
         self.db.cursor.execute("""UPDATE users SET user_root_admin = FALSE WHERE user_login like ? """, (user_login,))
@@ -314,10 +334,10 @@ class LogicalPart:
         else:
             return False
 
-    def bot_check_is_root_admin(self, user_id):
-        args = (user_id,)
+    def bot_check_is_root_admin(self, user_login):
+        args = (user_login,)
         cursor = self.db.connection.cursor()
-        cursor.execute("""select user_root_admin from users where user_id = ?;""", args)
+        cursor.execute("""select user_root_admin from users where user_login = ?;""", args)
         row = cursor.fetchone()
         if row is not None:
             row = str(row)[1:-2]

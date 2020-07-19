@@ -1,6 +1,9 @@
+import random
+import sqlite3
+
 from aiogram import types
 from aiogram.utils.callback_data import CallbackData
-
+import base64
 from Bot.misc import bd, dp
 from model.recipe import Recipe
 
@@ -36,9 +39,26 @@ def get_reply_fmt(recipe_list, start_indx=0):
 
 def format_recipe(recipe_id: str, start_indx: str, recipe: Recipe, user_id) -> (str, types.InlineKeyboardMarkup):
     description = recipe.description.replace("\'", "").replace("\\n", "\n").replace("\\r", " ")
-    text = f"Название: {recipe.name}\nКаллорийность: {recipe.calories} ккал.\nВремя приготовления: {recipe.time_cooking}\n{description}".replace(
+
+    filepath = f'../tmp/{random.randint(12, 10000) * 33}.png'
+    image = recipe.image[0]
+    try:
+        fout = open(filepath, 'wb')
+        fout.write(image)
+    finally:
+        if fout:
+            fout.close()
+    photo = filepath
+
+    ingredients = ''
+    for i in recipe.ingredients:
+        ingredients += f' {i},'
+    text = f"Название: {recipe.name}\nКаллорийность: {recipe.calories} ккал.\nВремя приготовления: {recipe.time_cooking}\nИнгредиенты : {ingredients[:-1]+'.'}\nРецепт:\n{description}".replace(
         "\'", "")
-    #TODO 4096 символов в 1 сообщении
+
+    if len(text) > 4096:
+        text = text[:4090-len(text)]+"....."
+
     favourites = bd.bot_get_favourites(user_id)
     is_favourite = False
     if favourites:
@@ -64,16 +84,16 @@ def format_recipe(recipe_id: str, start_indx: str, recipe: Recipe, user_id) -> (
         link = link[8:]
 
     markup.add(
-        types.InlineKeyboardButton('Открыть на сайте', url=link)
+        types.InlineKeyboardButton('Открыть на сайте', url=link.replace('\'',""))
     )
     markup.add(types.InlineKeyboardButton('<< Back', callback_data=recipe_cb.new(recipe_id='-', start_indx=start_indx,
                                                                                  action='list')))
-    return text, markup
+    return text, markup, photo
 
 
 def query_handler_view(msg_for_search, callback_data):
     recipe_id = callback_data['recipe_id']
     recipe = bd.make_recipe_object(recipe_id)
-    text, markup = format_recipe(recipe_id, callback_data['start_indx'], recipe,
-                                 msg_for_search.from_user.id)
-    return text, markup
+    text, markup, photo = format_recipe(recipe_id, callback_data['start_indx'], recipe,
+                                        msg_for_search.from_user.id)
+    return text, markup, photo
