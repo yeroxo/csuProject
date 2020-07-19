@@ -1,6 +1,6 @@
 import requests as req
 from bs4 import BeautifulSoup
-from abstract_classes import Crawler
+from Scrapper.abstract_classes import Crawler
 
 
 class CrawlerTvoirecepty(Crawler):

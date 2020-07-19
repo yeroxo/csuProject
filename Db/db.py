@@ -76,6 +76,12 @@ class SqliteRecipes:
         self.add_categories(recipe.categories)
         self.connection.commit()
 
+    def get_img_path(self, link):
+        elements = link.split('/')
+        name = elements[-1]
+        print(f'../photos/{name}')
+        return f'../photos/{name}'
+
     def add_ingredients(self, ingr_list):
         self.execute_query(self.find_recept_id)
         r_id = int(str(self.cursor.fetchone())[1:-2])
@@ -102,29 +108,58 @@ class SqliteRecipes:
             args = (str(r_id), str(categ_id))
             self.execute_query_with_value(self.insert_categoty_to_recipe, args)
 
-    def bot_find_recipes(self, user_id, str_ing=None, str_filt=None):
+    """
+    ingr_diff_num задается пользователем
+    является разрешимым допущением в различии кол-ва ингредиентов в рецепте
+    если пользователю пофиг - равен -1
+    """
+
+    def bot_find_recipes(self, user_id, ingr_diff_num, str_ing=None, str_filt=None):
         filt_res = []
         ing_res = []
         if str_filt is not None:
             filters_list = str_filt.split(', ')
             filt_res = self.bot_select_by_category(filters_list)
+
         if str_ing is not None:
             ing_list = str_ing.split(', ')
             ing_res = self.bot_select_by_ingredients(ing_list)
+
         self.add_to_history(user_id, str_ing, str_filt)
         self.connection.commit()
         if str_ing is not None and str_filt is not None:
             final_result = list((Counter(ing_res) & Counter(filt_res)).elements())
-            print(final_result)
-            return final_result
-        if str_ing is None and str_filt is None:
+        elif str_ing is None and str_filt is None:
             return []
-        if str_ing is not None:
-            print(ing_res)
-            return ing_res
+        elif str_ing is not None:
+            final_result = ing_res
         else:
-            print(filt_res)
             return filt_res
+
+        if ingr_diff_num!=-1:
+            final_result = self.find_recipe_without_diff(ingr_diff_num, len(ing_res),final_result)
+        return final_result
+
+    """
+    в методе find_recipe_without_diff diff_num - разрешимая разница в количестве ингредиентов
+    ingr_num - количество ингредиентов, введенных пользователем
+    если разница между введенным пользователем количеством и суммой ингредиентов в рецепте 
+    меньше diff_num, то принимаем рецепт
+    """
+
+    def find_recipe_without_diff(self, diff_num, ingr_num, recipes_list):
+        result = []
+        for rec in recipes_list:
+            self.execute_query_with_value("""select count(pr_id) from ingredients 
+                                                                where rec_id = ?;""", (rec,))
+            rec_ingr = self.cursor.fetchone()
+            if rec_ingr-ingr_num>diff_num:
+                result.append(rec)
+        return result
+
+    def bot_find_recipes_by_name(self, str_name):
+        self.execute_query_with_value("""select * from recipes 
+                                                where rec_name like ?""", (str_name,))
 
     def find_with_categories(self, elem):
         self.execute_query_with_value("""SELECT distinct c1.rec_id FROM categories_of_recipes c1 
@@ -219,6 +254,10 @@ class SqliteRecipes:
         data = self.read_image(img_path)
         binary = sqlite3.Binary(data)
         return binary
+
+    def download_image(self, img_url, path):
+        urllib.parse.quote(':')
+        return urlretrieve(img_url, path)
 
     create_products_table = """
     CREATE TABLE IF NOT EXISTS products (
@@ -353,6 +392,7 @@ class SqliteRecipes:
     and c.c_id = ?;   
     """
 
+
 if __name__ == '__main__':
     db = SqliteRecipes()
     rec = model.recipe.Recipe('Блинчики', r"../photos/43LlEln7bzo.jpg", ['яйца', 'мука', 'молоко', 'сахар', 'соль'],
@@ -365,9 +405,10 @@ if __name__ == '__main__':
                                '10 минут', ['быстрые рецепты', 'на сковороде', 'завтрак'])
     rec4 = model.recipe.Recipe('Тохгхтик ням-ням', r"../photos/43LlEln7bzo.jpg",
                                ['яйца', 'мука', 'молоко', 'сахар', 'сгущеное молоко', 'орехи'],
-                               'http:\\eda.ru', 'тяп-ляп и готово', '700', '31 час', ['десерты', 'торты', 'день рождения'])
+                               'http:\\eda.ru', 'тяп-ляп и готово', '700', '31 час',
+                               ['десерты', 'торты', 'день рождения'])
 
-# db.add_recipe(rec)
+#db.add_recipe(rec)
 # db.add_recipe(rec2)
 # db.add_recipe(rec4)
 # db.add_user('14g9ok8')
@@ -378,8 +419,8 @@ if __name__ == '__main__':
 # print(db.date_now())
 # db.bot_find_recipes('668ud9', 'яйца, мука','масленица')
 # db.download_image('https://eda.ru/img/eda/c620x415i/s2.eda.ru/StaticContent/Photos/120213175531/180415114517/p_O.jpg', r'тут путь сохранения')
-#db.bot_select_by_category(['завтрак', 'на сковороде'])
-#db.bot_select_by_ingredients(['мука','яйца','шоколад'])
-#db.bot_find_recipes('668ud9','мука, яйца', 'завтрак')
+# db.bot_select_by_category(['завтрак', 'на сковороде'])
+# db.bot_select_by_ingredients(['мука','яйца','шоколад'])
+#db.bot_find_recipes('668ud9', 'мука, яйца', 'завтрак')
 #db.bot_find_recipes('668ud9','мука, яйца',None)
-#db.bot_find_recipes('668ud9',None,'день рождения')
+# db.bot_find_recipes('668ud9',None,'день рождения')

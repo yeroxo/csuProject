@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from model.recipe import Recipe
 from urllib.request import urlretrieve
 import urllib
-from abstract_classes import *
+from Scrapper.abstract_classes import *
 
 
 
@@ -61,7 +61,7 @@ class ParserTvoirecepty(Parser):
         info = info.find_all('div', class_='ingredient col-xs-12 nopadding margin-bottom-10 collapsed')
         for i in info:
             ingredient = i.find('div', class_='name pull-left').text
-            ingredients.append(ingredient.strip())
+            ingredients.append(ingredient.strip().lower())
         return ingredients
 
     def get_categories(self, item):
@@ -111,6 +111,8 @@ class ParserTvoirecepty(Parser):
         return path
 
     def download_image(self, img_url, path):
+        print(img_url)
+        print(path)
         urllib.parse.quote(':')
         return urlretrieve(img_url, path)
 
