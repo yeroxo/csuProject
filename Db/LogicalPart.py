@@ -46,17 +46,17 @@ class LogicalPart:
     def find_recipe_without_diff(self, diff_num, ingr_num, recipes_list):
         result = []
         for rec in recipes_list:
-            self.db.connection.execute("""select count(pr_id) from ingredients 
-                                                                   where rec_id = ?;""", (rec,))
+            self.db.execute_query_with_value("""select count(pr_id) from ingredients 
+                                                                   where rec_id = ?;""", (rec.id,))
             rec_ingr = self.db.cursor.fetchone()
-            if rec_ingr[0] - ingr_num > diff_num:
+            if rec_ingr[0] - ingr_num <= diff_num:
                 result.append(rec)
         return result
 
     def bot_find_recipes_by_name(self, user_id, str_name):
         self.add_to_history(user_id, str_name, None, None)
         recipes = self.db.cursor.execute("""select rec_id from recipes
-                                                   where rec_name like ?""", ('%'+str_name+'%',))
+                                                   where lower(rec_name) like ?""", ('%'+str_name.lower()+'%',))
         result = []
         for r in recipes:
             r = str(r)[1:-2]
@@ -64,7 +64,13 @@ class LogicalPart:
         return result
 
     def bot_find_recipes_by_ingredients(self, user_id, str_ing="", ingr_diff_num=-1):
-        ing_list = str_ing.split(', ')
+        ing_list = str_ing.split(',')
+        for i in range(len(ing_list)):
+            ing_list[i] = ing_list[i].strip()
+            while ing_list[i][0] == ' ':
+                ing_list[i] = ing_list[i][1::]
+            while ing_list[i][-1] == ' ':
+                ing_list[i] = ing_list[i][0:-2]
         recipes = self.select_by_ingredients(ing_list)
         result = []
         for r in recipes:
@@ -75,7 +81,13 @@ class LogicalPart:
         return result
 
     def bot_find_recipes_by_categories(self, user_id, str_categ):
-        categ_list = str_categ.split(', ')
+        categ_list = str_categ.split(',')
+        for i in range(len(categ_list)):
+            categ_list[i] = categ_list[i].strip()
+            while categ_list[i][0] == ' ':
+                categ_list[i] = categ_list[i][1::]
+            while categ_list[i][-1] == ' ':
+                categ_list[i] = categ_list[i][0:-2]
         recipes = self.select_by_category(categ_list)
         result = []
         for r in recipes:
@@ -83,6 +95,8 @@ class LogicalPart:
             print(r)
         self.add_to_history(user_id, None, None, str_categ)
         return result
+
+
 
     def sql_find_with_categories(self, elem):
         self.db.cursor.execute("""SELECT distinct c1.rec_id FROM categories_of_recipes c1 

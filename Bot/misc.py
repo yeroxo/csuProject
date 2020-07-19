@@ -6,6 +6,8 @@ from Db.LogicalPart import LogicalPart as DataBase
 
 from Bot import config
 
+# инициализируем все что нам нужно
+
 bot = Bot(token=config.API_TOKEN)
 memory_storage = MemoryStorage()
 bd = DataBase()
