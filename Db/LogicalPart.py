@@ -56,7 +56,7 @@ class LogicalPart:
     def bot_find_recipes_by_name(self, user_id, str_name):
         self.add_to_history(user_id, str_name, None, None)
         recipes = self.db.cursor.execute("""select rec_id from recipes
-                                                   where lower(rec_name) like ?""", ('%'+str_name.lower()+'%',))
+                                                   where lower(rec_name) like ?""", ('%' + str_name.lower() + '%',))
         result = []
         for r in recipes:
             r = str(r)[1:-2]
@@ -95,8 +95,6 @@ class LogicalPart:
             print(r)
         self.add_to_history(user_id, None, None, str_categ)
         return result
-
-
 
     def sql_find_with_categories(self, elem):
         self.db.cursor.execute("""SELECT distinct c1.rec_id FROM categories_of_recipes c1 
@@ -171,18 +169,31 @@ class LogicalPart:
         return model.recipe.Recipe(name, image, ingr, link, description, calories, time_cooking, categ, rec_id)
 
     def bot_get_history(self, user_id):
-        self.db.cursor.execute("""select * from history where user_id like ?""", (user_id,))
+        self.db.cursor.execute("""select * from history where user_id like ? order by date_of_adding desc limit 10""",
+                               (user_id,))
         return self.db.cursor.fetchall()
 
+    # def bot_get_new_users_week(self):
+    #     s_date = str(self.date_now())[2:-3]
+    #     res = []
+    #     for i in range(7):
+    #         self.db.cursor.execute("""select count(user_id) from users where date_of_adding = date(?)""", (s_date,))
+    #         count = str(self.db.cursor.fetchone())[1:-2]
+    #         res.append({s_date, count})
+    #         self.db.cursor.execute("""select date(?,'-1 days');""", (s_date,))
+    #         s_date = str(self.db.cursor.fetchone())[2:-3]
+    #     return res
+
     def bot_get_new_users_week(self):
-        s_date = self.date_now()
+        s_date = self.date_now_without_hours()
         res = []
         for i in range(7):
-            self.db.cursor.execute("""select count(user_id) from users where date_of_adding = date(?)""", (s_date,))
+            self.db.cursor.execute("""select count(user_id) from users where date(date_of_adding) = date(?)""",
+                                   (s_date,))
             count = str(self.db.cursor.fetchone())[1:-2]
-            res.append(count)
+            res.append([s_date, count])
             self.db.cursor.execute("""select date(?,'-1 days');""", (s_date,))
-            s_date = str(self.db.cursor.fetchone())[1:-2]
+            s_date = str(self.db.cursor.fetchone())[2:-3]
         return res
 
     def bot_get_new_users_month(self):
@@ -227,7 +238,6 @@ class LogicalPart:
            values(?,?,?,?,?);""", (user_id, name, products, categories, self.date_now()))
         self.db.connection.commit()
 
-
     def bot_get_categories(self):
         self.db.cursor.execute("""select * from categories;""")
         result = self.db.cursor.fetchall()
@@ -236,8 +246,12 @@ class LogicalPart:
         return None
 
     def bot_get_favourites(self, user_id):
-        self.db.cursor.execute("""select * from favourites where user_id like ?""", (user_id,))
-        result = self.db.cursor.fetchall()
+        self.db.cursor.execute("""select rec_id from favourites where user_id like ?""", (user_id,))
+        recipes = self.db.cursor.fetchall()
+        result = []
+        for r in recipes:
+            r = str(r)[1:-2]
+        result.append(self.make_recipe_object(r))
         if result:
             return result
         return None
@@ -257,6 +271,11 @@ class LogicalPart:
                                          (user_id, rec_id))
 
     def date_now(self):
+        self.db.execute_query("""SELECT datetime('now','localtime');""")
+        res = str(self.db.cursor.fetchone())[2:-3]
+        return res
+
+    def date_now_without_hours(self):
         self.db.execute_query("""SELECT date('now');""")
         res = str(self.db.cursor.fetchone())[2:-3]
         return res

@@ -102,6 +102,19 @@ profile_menu = types.ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
+admin_action = types.ReplyKeyboardMarkup(
+    keyboard=[
+        [
+            types.KeyboardButton(text='Статистика по новым пользователям'),
+            types.KeyboardButton(text='Статистика по активным')
+        ],
+        [
+            types.KeyboardButton(text='Вернуться')
+        ]
+    ],
+    resize_keyboard=True
+)
+
 
 # Прописываем все основные команды и переходы
 
@@ -120,7 +133,10 @@ async def start_bot(message: types.Message):
 
 @dp.message_handler(Text(equals='Вернуться'), state='*')
 async def back(message: types.Message):
-    await message.answer(f"Вы вернулись", reply_markup=main_menu)
+    if bd.bot_check_is_admin(message.from_user.id):
+        await message.answer(f'Привет администратор, {message.from_user.full_name}', reply_markup=main_menu_admin)
+    else:
+        await message.answer(f"Вы вернулись", reply_markup=main_menu)
 
 
 @dp.message_handler(Text(equals='Поиск'), state='*')
@@ -148,3 +164,21 @@ async def choose_search_type_name(msg: types.Message):
 @dp.message_handler(Text(equals='Профиль'), state='*')
 async def choose_search_type_name(msg: types.Message):
     await msg.answer('Что вы хотите посмотреть?', reply_markup=profile_menu)
+
+
+@dp.message_handler(Text(equals='История'), state='*')
+async def choose_search_type_name(msg: types.Message):
+    history = bd.bot_get_history(msg.from_user.id)
+    text = ""
+    b = 0
+    for i, story in enumerate(history):
+        text += f'{i + 1}. {story[4]}  вы искали рецепт по {story[3]} {story[2]} {story[1]}\n'.replace("None", "")
+    await msg.answer(text)
+
+
+@dp.message_handler(Text(equals='Панель Админа'), state='*')
+async def choose_admin_action(msg: types.Message):
+    if bd.bot_check_is_admin(msg.from_user.id):
+        await msg.answer('Доступ администратора', reply_markup=admin_action)
+    else:
+        await msg.answer('доступ закрыт', reply_markup=main_menu)

@@ -35,12 +35,15 @@ def get_reply_fmt(recipe_list, start_indx=0):
 
 
 def format_recipe(recipe_id: str, start_indx: str, recipe: Recipe, user_id) -> (str, types.InlineKeyboardMarkup):
-    text = f"ID: {recipe.id}\nTitle: {recipe.name}"
+    description = recipe.description.replace("\'", "").replace("\\n", "\n").replace("\\r", " ")
+    text = f"Название: {recipe.name}\nКаллорийность: {recipe.calories} ккал.\nВремя приготовления: {recipe.time_cooking}\n{description}".replace(
+        "\'", "")
+    #TODO 4096 символов в 1 сообщении
     favourites = bd.bot_get_favourites(user_id)
     is_favourite = False
     if favourites:
         for favourite in favourites:
-            if int(recipe.id) == favourite[0]:
+            if int(recipe.id) == int(favourite.id):
                 is_favourite = True
                 break
     markup = types.InlineKeyboardMarkup()

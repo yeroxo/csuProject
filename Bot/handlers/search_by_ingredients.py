@@ -40,7 +40,7 @@ async def search_ingredients(msg_search_type: types.Message, state: FSMContext):
         @dp.callback_query_handler(recipe_cb.filter(action='list'), state=SearchByIngredients.waiting_for_user_view)
         async def query_show_list_by_ingredients(query: types.CallbackQuery, callback_data: dict):
             diff = await state.get_data()
-            history_recipe = bd.bot_get_history(msg_for_search.from_user.id)[-1]
+            history_recipe = bd.bot_get_history(msg_for_search.from_user.id)[0]
             last_recipes = bd.bot_find_recipes_by_ingredients(msg_for_search.from_user.id, history_recipe[2],
                                                               diff['diff'])
             reply_fmt = get_reply_fmt(last_recipes, callback_data['start_indx'])

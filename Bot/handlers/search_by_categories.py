@@ -31,7 +31,7 @@ async def search_categories_by_categories(msg_search_type: types.Message):
 
         @dp.callback_query_handler(recipe_cb.filter(action='list'), state=SearchByCategories.waiting_for_user_view)
         async def query_show_list_by_categories(query: types.CallbackQuery, callback_data: dict):
-            history_recipe = bd.bot_get_history(msg_for_search.from_user.id)[-1]
+            history_recipe = bd.bot_get_history(msg_for_search.from_user.id)[0]
             last_recipes = bd.bot_find_recipes_by_categories(msg_for_search.from_user.id, history_recipe[3])
             reply_fmt = get_reply_fmt(last_recipes, callback_data['start_indx'])
             await query.message.edit_text(reply_fmt['msg'], reply_markup=reply_fmt['markup'])

@@ -4,3 +4,4 @@ from . import search_by_ingredients
 from . import search_by_name
 from . import inline_methods
 from . import show_favourites
+from . import admin_handlers
