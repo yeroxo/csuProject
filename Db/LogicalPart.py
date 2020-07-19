@@ -62,13 +62,13 @@ class LogicalPart:
         self.add_to_history(user_id, str_name, None, None)
         return result
 
-    def bot_find_recipes_by_ingredients(self, user_id, str_ing, ingr_diff_num):
+    def bot_find_recipes_by_ingredients(self, user_id, str_ing="", ingr_diff_num=-1):
         ing_list = str_ing.split(', ')
         recipes = self.select_by_ingredients(ing_list)
         result = []
         for r in recipes:
             result.append(self.make_recipe_object(r))
-        if(ingr_diff_num!=-1):
+        if ingr_diff_num != -1:
             result = self.find_recipe_without_diff(ingr_diff_num, len(ing_list), result)
         self.add_to_history(user_id, None, str_ing, None)
         return result
@@ -157,6 +157,7 @@ class LogicalPart:
 
     def bot_get_history(self, user_id):
         self.db.cursor.execute("""select * from history where user_id like ?""", (user_id,))
+        return self.db.cursor.fetchall()
 
     def bot_get_new_users_week(self):
         s_date = self.date_now()
@@ -165,7 +166,7 @@ class LogicalPart:
             self.db.cursor.execute("""select count(user_id) from users where date_of_adding = date(?)""", (s_date,))
             count = str(self.db.cursor.fetchone())[1:-2]
             res.append(count)
-            self.db.cursor.execute("""select date(?,'-1 days');""",(s_date,))
+            self.db.cursor.execute("""select date(?,'-1 days');""", (s_date,))
             s_date = str(self.db.cursor.fetchone())[1:-2]
         return res
 
@@ -184,7 +185,8 @@ class LogicalPart:
         s_date = self.date_now()
         res = []
         for i in range(7):
-            self.db.cursor.execute("""select distinct count(user_id) from history where date_of_adding = date(?)""", (str(s_date),))
+            self.db.cursor.execute("""select distinct count(user_id) from history where date_of_adding = date(?)""",
+                                   (str(s_date),))
             count = str(self.db.cursor.fetchone())[1:-2]
             print(count)
             res.append(count)
@@ -196,7 +198,8 @@ class LogicalPart:
         s_date = self.date_now()
         res = []
         for i in range(30):
-            self.db.cursor.execute("""select distinct count(user_id) from history where date_of_adding = date(?)""", (str(s_date),))
+            self.db.cursor.execute("""select distinct count(user_id) from history where date_of_adding = date(?)""",
+                                   (str(s_date),))
             count = str(self.db.cursor.fetchone())[1:-2]
             print(count)
             res.append(count)
@@ -206,7 +209,7 @@ class LogicalPart:
 
     def add_to_history(self, user_id, name, products, categories):
         self.db.cursor.execute("""insert into history (user_id, name, products, categories, date_of_adding) 
-           values(?,?,?,?);""", (user_id, name, products, categories, self.date_now()))
+           values(?,?,?,?,?);""", (user_id, name, products, categories, self.date_now()))
 
     def bot_get_categories(self):
         self.db.cursor.execute("""select * from categories;""")
@@ -287,6 +290,6 @@ class LogicalPart:
        insert into users(user_id, user_login, user_admin, user_root_admin, date_of_adding) values(?, ?, FALSE, FALSE, date('now'));
        """
 
-lg = LogicalPart()
-lg.bot_find_recipes_by_name('молоко')
-lg.bot_get_active_users_week()
+# lg = LogicalPart()
+# lg.bot_find_recipes_by_name('молоко')
+# lg.bot_get_active_users_week()
