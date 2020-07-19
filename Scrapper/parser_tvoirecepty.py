@@ -85,7 +85,7 @@ class ParserTvoirecepty(Parser):
         tags = []
         info = item.find('div', class_='container nopadding').find_all('span', class_='tags-link')
         for i in info:
-            tags.append(i.text)
+            tags.append(i.text.lower())
         return tags
 
     def get_calories(self, soup):
