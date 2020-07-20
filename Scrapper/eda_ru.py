@@ -21,7 +21,7 @@ class CrawlerEdaRu(Crawler):
 
     def get_recipes_links(self):
         page_links = []
-        for page_num in range(324):
+        for page_num in range(1):#324):
             page_links.append(self.url + '?page=' + str(page_num + 1))
         print(page_links)
         for page in page_links:
@@ -92,10 +92,8 @@ class ParserEdaRu(Parser):
             'time_cooking': self.get_time(item),
             'categories': self.get_categories(item)
         }
-        recipe_rec = Recipe(recipe['name'], recipe['image'], recipe['ingredients'], recipe['link'],
-                            recipe['description'], recipe['calories'], recipe['time_cooking'], recipe['categories'])
-        print(recipe)
-        return recipe_rec
+
+        return recipe
 
     def get_image(self, item):
         link = item.find('img').get('src')
